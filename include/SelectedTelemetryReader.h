@@ -7,6 +7,8 @@ struct SelectedTelemetry {
  uint32_t slot15c=0,slot160=0,object=0,hpRaw=0;
  float hp=0;
  EntityIdentity identity;
+ uint32_t typeCandidateA=0,typeCandidateB=0;
+ bool typeCandidatesReadable=false,typeReferenceStable=false;
  EntityOwnership ownership=EntityOwnership::Unknown;
 };
 SelectedTelemetry ReadSelectedTelemetry(const MemoryReader& memory,const WorldResult& world);
