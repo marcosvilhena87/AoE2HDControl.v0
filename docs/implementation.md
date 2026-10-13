@@ -41,3 +41,29 @@ ctest --test-dir build2026 -C Release --output-on-failure
 Aparecera `ProcessNotFound` enquanto o jogo nao estiver aberto; estados como `MissingOwner`, `MissingWorld`, `InvalidVector`, `InvalidPlayer`, `ReadFailed` e `Ready` quando houver processo. Apos `Ready`, a saida inclui World, LocalObject, localIndex e players. Para interromper, `Ctrl+C`. Para fazer um ensaio finito: `--samples 40` (amostras, nao segundos). `--interval-ms` aceita 1..60000.
 
 **Cuidado:** status transitorios podem ser pulados devido ao intervalo de polling, e o monitor nao estabelece prontidao operacional. Fechamento/reinicio do executavel e mudanca de mapa devem ser verificados na pratica. Nao use como sincronizacao para emissao de comandos.
+
+## Leitura de recursos do jogador local (experimental)
+
+Confirmado por alteracoes independentes de recursos e inspecao da memoria da partida AoK HD.exe 5.8.INT x86:
+
+```text
+World -> mPlayers[mLocalPlayerIndex] -> LocalPlayer
+[LocalPlayer + 0x3C] = ResourceTable*
+ResourceTable + 0x00 = Food  (float32)
+ResourceTable + 0x04 = Wood  (float32)
+ResourceTable + 0x08 = Stone (float32)
+ResourceTable + 0x0C = Gold  (float32)
+```
+
+O `aoe2hd_probe.exe` passa a exibir os quatro recursos e o endereco da tabela, obtidos apenas por `ReadProcessMemory`. Os valores sao floats brutos; o HUD pode exibir apenas sua parte inteira. A leitura valida o ponteiro, campos finitos nao negativos e relê os campos de referencia do jogador e da tabela para detectar parte das transicoes. **Nao e uma fotografia atomica do jogo**. Os offsets sao especificos da versao investigada; validar em outras partidas e configuracoes.
+
+```powershell
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControlAtualizado
+git pull origin main
+cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
+cmake --build build2026 --config Release
+ctest --test-dir build2026 -C Release --output-on-failure
+.\build2026\Release\aoe2hd_probe.exe
+```
+
+`ResourcesStatus=Ready` significa que o leitor conseguiu recuperar os quatro atributos com checagens basicas. Se o World estiver pronto mas a tabela nao estiver legivel, o probe exibe um status de falha especifico e retorna codigo 3; codigo 1 = World nao pronto; codigo 2 = processo indisponivel. O novo teste `resource_reader_tests` verifica leitura, alteracao de ouro, tabela nula, falha de leitura, valor invalido e mudanca do back-pointer.
