@@ -34,7 +34,21 @@ int main(int argc,char** argv) {
         const std::string arg=argv[i];
         if(arg=="--csv" && i+1<argc)csvPath=argv[++i];
         else if(arg=="--phase-file" && i+1<argc)phasePath=argv[++i];
-        else {std::cerr<<"Usage: aoe2hd_production_progress [--csv path] [--phase-file path]\n";return 2;}
+        else if(arg=="--watch" && i+1<argc) {
+            const std::string raw=argv[++i];
+            if(raw.empty() || raw[0]=='-' || raw[0]=='+') {
+                std::cerr<<"Invalid --watch address: "<<raw<<"\n";return 2;
+            }
+            errno=0;char* end=nullptr;
+            const unsigned long long parsed=std::strtoull(raw.c_str(),&end,0);
+            if(errno || end==raw.c_str() || *end!='\0' || parsed<0x1000ULL ||
+               parsed>std::numeric_limits<uint32_t>::max()) {
+                std::cerr<<"Invalid --watch address: "<<raw<<"\n";return 2;
+            }
+            const uint32_t addr=static_cast<uint32_t>(parsed);
+            if(deduplicated.insert(addr).second)watched.push_back(addr);
+        }
+        else {std::cerr<<"Usage: aoe2hd_production_progress [--csv path] [--phase-file path] [--watch 0xADDRESS ...]\n";return 2;}
     }
     // Legacy addresses are session-specific: never monitor them by default.
     // An explicitly supplied --watch replaces the previous hardcoded list.
