@@ -581,3 +581,7 @@ Run \`aoe2hd_cross_player_type.exe\` with **current-session** object addresses o
 \`\`\`
 
 \`<prefix>_samples.csv\` records candidate reference stability, owner classification and definition-relative raw candidate fields \`+0x08\` and \`+0x0C\`. \`<prefix>_pairs.csv\` compares candidate values for **pairs with the same supplied kind**, including an indicator of local-vs-other-player pairing. A result of \`equal\` is evidence only, not an officially verified type ID; \`different\` may reflect civilization-dependent definitions; \`insufficient\` means missing/unstable values. Read-only memory access. Do not reuse object addresses between matches. CSV output overwrites files with the supplied prefix.
+
+### Selected telemetry: experimental type candidates
+
+`aoe2hd_selected_telemetry.exe` now appends `type_ref_stable`, `type_candidates_readable`, `type_candidate_a_08`, and `type_candidate_b_0c` columns after the original CSV columns. It reads candidate fields from the structure pointed to by `Entity+0x0C`, rechecks that reference and the selection pointers, and leaves candidate values **blank** if unavailable. The original ownership, entity ID and HP capture remain available even if optional candidate-field reads fail. Candidate A/B are unverified; user-provided names such as villager, scout and town center are experimental ground truth, not automatically assigned by this reader. Start with a new CSV filename to preserve earlier captures.
