@@ -511,3 +511,15 @@ Import-Csv .\aoe2hd_selection_pointers.csv | Format-Table elapsed_ms,phase,offse
 The monitor reads five candidate pointer slots at **LocalPlayer+0x15C, +0x160, +0x164, +0x168 and +0x16C** every ~250 ms. For each aligned candidate pointer, it attempts a read-only float32 HP read at `pointer + 0x34`. The resulting `aoe2hd_selection_pointers.csv` records initial values, pointer changes and clears, read status changes, HP changes and phase transitions. Use phase markers such as `none`, `villager_a`, `villager_b` and `villager_c` while selecting and deselecting units. The original explicit-address HP monitor and `--discover-pointers` remain available and can be combined with `--watch-selection`.
 
 **These offsets are candidates, not a verified unit enumeration table.** The fields were observed to hold changing references and may represent selection/UI/controller state instead of a full roster. Pointers may be stale; failed reads are recorded rather than treated as health, and plausibility of a float value does not establish object identity. Repeat the experiment in a new match to validate any structural inference. Read-only access only.
+
+
+### EntityTypeDiscovery v1: compare known object layouts
+
+The experimental read-only `aoe2hd_entity_type.exe` captures the first 0x100 bytes (or up to 0x400 via `--bytes`) from each **known object base** and compares 32-bit values at matching offsets. Use at least two labeled object addresses from the **currently running match**:
+
+```powershell
+.\build2026\Release\aoe2hd_entity_type.exe --entity villager 0x141BD998 --entity house 0x15756740 --entity barracks 0x157561F0 --entity town_center 0x14091830 --prefix aoe2hd_entity_type
+Import-Csv .\aoe2hd_entity_type_comparison.csv | Where-Object differentiates -eq '1' | Format-Table -AutoSize
+```
+
+Output files: `aoe2hd_entity_type_fields.csv` (one row per object and offset) and `aoe2hd_entity_type_comparison.csv` (readable/distinct-value statistics). Labels are entered by the operator; **the program does not yet identify types automatically**. Differences may reflect HP, identity, pointers or mutable state. Repeating with multiple examples of the same type and in fresh games is required to isolate candidate type-identification fields. The example absolute addresses are from an earlier game and may no longer be valid. The probe is read-only and does not attach a debugger.
