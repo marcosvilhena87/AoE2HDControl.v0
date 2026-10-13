@@ -406,3 +406,8 @@ Execute `build2026\\Release\\aoe2hd_unit_discovery.exe --csv aoe2hd_unit_candida
 ### Unit discovery v2: diagnostico de candidatos
 
 A varredura agora inspeciona `LocalPlayer` **e** `World` (ate 0x400 bytes por raiz, com limite rigido de 0x800), sem afirmar que um candidato seja uma lista de unidades. O CSV agrega `source` e `reason` (`Accepted`, `Empty` ou `UnreadableEntries`), alem de contadores de rejeicao: `read_failures`, `nonvector`, `invalid_bounds`, `oversized`, `misaligned` e `unreadable`. Linhas `Summary` sao emitidas a cada cerca de 5 segundos durante snapshots estruturais validos, mesmo sem candidatos. Compare capturas antes/depois de treinar um aldeao (populacao 4/5 para 5/5, limite constante). O detector nao identifica unidades diretamente e pode produzir falsos positivos.
+
+
+### Rastreio de conteudo dos vetores candidatos (v3)
+
+O executavel `aoe2hd_unit_discovery` agora gera tambem `aoe2hd_unit_changes.csv`, com as colunas `elapsed_ms,world,player,source,offset,stride,index,kind,before,after,count`. Sao registradas mudancas de palavras de 32 bits das entradas de vetores candidatos aceitos, mesmo quando a contagem e constante. `changed`, `added`, `removed` e `relocated` sao diferencas de memoria, **nao identificacoes confirmadas de unidades**. O primeiro snapshot estabelece baseline; leituras parciais sao ignoradas; trocas de World/player e indisponibilidade resetam a comparacao. Nao interpretar mudanca em `World+0x184` (vetor de jogadores) como unidade. Compare uma partida com populacao 4/5 e depois 5/5; envie ambos CSVs. Ha limite de 512 entradas por candidato por amostra. Teste novo: `unit_content_tracker_tests`.
