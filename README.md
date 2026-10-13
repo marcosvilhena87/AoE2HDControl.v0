@@ -416,3 +416,8 @@ O executavel `aoe2hd_unit_discovery` agora gera tambem `aoe2hd_unit_changes.csv`
 ### Validacao semantica de ponteiros (v4, experimental)
 
 `aoe2hd_unit_discovery` tambem cria `aoe2hd_unit_pointer_evidence.csv` a cada cerca de cinco segundos. Para cada candidato aceito, limita a verificacao a 32 entradas e le somente as primeiras quatro bytes de cada alvo plausivel. Colunas: `source,offset,stride,count,sampled,nonzero,readable_targets,distinct_targets,plausible_vtables,modal_vtable,matching_vtables` (alem de tempo e identidade do jogo). Interpretacoes de stride sobrepostas sao deduplicadas por raiz, offset e inicio do array; apenas uma representacao e amostrada. `plausible_vtables` indica primeiras palavras com endereco alinhado dentro da imagem principal do jogo: **heuristica**, nao comprovacao de objeto C++ ou unidade. A ferramenta continua somente leitura e nao segue cadeias arbitrarias de ponteiros. Compare o CSV antes e depois de produzir um aldeao, mantendo o limite populacional 5.
+
+
+### Object field sampling (experimental)
+
+The unit discovery executable also creates `aoe2hd_object_fields.csv`. It samples 16 objects (maximum) from each of the previously examined World vectors at offsets `0x88`, `0xA0`, `0xB0` using eight-byte entries, inspecting the first 64 bytes (16 32-bit words) of each readable target. The first observation becomes the baseline; subsequent samples record `field_changed` or `object_changed`, without assigning semantics to field offsets. A change of World/player or an unavailable world resets the baseline. Invalid/incomplete object reads do not update it. These are structural probes, NOT established unit identifiers, types, or coordinates. Test `object_field_sampler_tests`.
