@@ -341,3 +341,7 @@ Há agora um **protótipo experimental e somente leitura** com `ReadWorld()`, `G
 ## Leitura de recursos econômicos (experimental)
 
 A cadeia `[LocalPlayer + 0x3C] -> ResourceTable` foi confirmada em uma partida de **AoK HD.exe 5.8.INT (x86)**, por instruções Assembly e mudanças individuais na interface. Os quatro primeiros `float32` são **comida (+0x00)**, **madeira (+0x04)**, **pedra (+0x08)** e **ouro (+0x0C)**. O programa `aoe2hd_probe.exe` agora utiliza `ReadLocalResources()` para exibir os valores em modo somente leitura. Não armazena endereços absolutos entre partidas. Consulte [docs/implementation.md](docs/implementation.md) para executar e testar. Ainda não foi validado em todas as configurações ou versões do jogo.
+
+## Monitor econômico contínuo (experimental)
+
+Execute `aoe2hd_economy_monitor.exe --interval-ms 250` para registrar somente mudanças de comida, madeira, pedra e ouro em tempo real. Na troca de World/jogador/tabela, o monitor emite um novo snapshot inicial em vez de somar valores de partidas diferentes; estados indisponíveis são informados separadamente. Não escreve na memória. Consulte [docs/implementation.md](docs/implementation.md).
