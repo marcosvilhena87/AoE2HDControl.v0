@@ -2,6 +2,7 @@
 #include <array>
 #include <cstdint>
 #include <limits>
+#include <utility>
 
 namespace aoe2hd {
 namespace {
