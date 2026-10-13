@@ -30,6 +30,14 @@ int main(){
  float hp=45;uint32_t raw=0;std::memcpy(&raw,&hp,4);f.values[0x40034]=raw;
  auto a=ReadSelectedTelemetry(f,w);
  assert(a.status==TelemetryStatus::Ready&&a.hp==45&&a.identity.candidateId==123&&a.ownership==EntityOwnership::Local);
+ f.values[0x4000c]=0x50000;
+ f.values[0x50008]=5122;f.values[0x5000c]=6122;
+ auto typed=ReadSelectedTelemetry(f,w);
+ assert(typed.status==TelemetryStatus::Ready&&typed.typeCandidatesReadable&&typed.typeReferenceStable);
+ assert(typed.typeCandidateA==5122&&typed.typeCandidateB==6122);
+ f.values.erase(0x50008);
+ auto missing=ReadSelectedTelemetry(f,w);
+ assert(missing.status==TelemetryStatus::Ready&&!missing.typeCandidatesReadable&&missing.hp==45);
  f.values[0x40010]=0x30000;
  assert(ReadSelectedTelemetry(f,w).ownership==EntityOwnership::OtherPlayer);
  f.values.erase(0x40034);
