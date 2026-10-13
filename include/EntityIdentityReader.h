@@ -8,6 +8,9 @@ struct EntityIdentity {
  bool readable=false;
 };
 EntityIdentity ReadEntityIdentity(const MemoryReader& memory,uint32_t object);
+enum class EntityOwnership { Unknown, Local, OtherPlayer, Unmatched };
+EntityOwnership ClassifyEntityOwnership(const EntityIdentity& entity,const WorldResult& world);
+const char* EntityOwnershipName(EntityOwnership ownership);
 enum class OwnerRelation { Unknown, SameCandidate, DifferentCandidate };
 OwnerRelation CompareCandidateOwners(const EntityIdentity& a,const EntityIdentity& b);
 }
