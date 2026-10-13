@@ -3,7 +3,7 @@ project(AoE2HDControl LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(aoe2hd_world src/WorldReader.cpp src/WorldMonitor.cpp src/ResourceReader.cpp src/EconomyMonitor.cpp src/PopulationReader.cpp src/GameplayReadinessMonitor.cpp)
+add_library(aoe2hd_world src/WorldReader.cpp src/WorldMonitor.cpp src/ResourceReader.cpp src/EconomyMonitor.cpp src/PopulationReader.cpp src/GameplayReadinessMonitor.cpp src/DerivedEventDetector.cpp)
 target_include_directories(aoe2hd_world PUBLIC include)
 
 if(WIN32)
@@ -41,6 +41,9 @@ if(BUILD_TESTING)
   add_executable(economy_monitor_tests tests/EconomyMonitorTests.cpp)
   target_link_libraries(economy_monitor_tests PRIVATE aoe2hd_world)
   add_test(NAME economy_monitor_tests COMMAND economy_monitor_tests)
+  add_executable(derived_event_tests tests/DerivedEventDetectorTests.cpp)
+  target_link_libraries(derived_event_tests PRIVATE aoe2hd_world)
+  add_test(NAME derived_event_tests COMMAND derived_event_tests)
 endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
