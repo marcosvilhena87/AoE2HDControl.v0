@@ -24,3 +24,20 @@ Run with the same Windows account as the game. The tool finds `AoK HD.exe` and t
 - The x86 target's address space is assumed; building the probe as Win32 is recommended. No version/hash gate exists yet.
 
 Next: expand dynamic transition tests and identify player resources by read-only inspection.
+
+## Monitor continuo de ciclo de vida (2026-10-12)
+
+O novo executavel `aoe2hd_monitor` consulta periodicamente o estado de `World`, em modo somente leitura, e imprime **apenas quando o estado observado muda** (inclusive troca de `World*` e de jogador local). Abre novamente o processo a cada amostra para tolerar fechamento/reabertura do jogo. Um estado muito breve entre duas amostras pode não ser observado.
+
+Compilacao com Visual Studio 2026:
+
+```powershell
+cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
+cmake --build build2026 --config Release
+ctest --test-dir build2026 -C Release --output-on-failure
+.\build2026\Release\aoe2hd_monitor.exe --interval-ms 250
+```
+
+Aparecera `ProcessNotFound` enquanto o jogo nao estiver aberto; estados como `MissingOwner`, `MissingWorld`, `InvalidVector`, `InvalidPlayer`, `ReadFailed` e `Ready` quando houver processo. Apos `Ready`, a saida inclui World, LocalObject, localIndex e players. Para interromper, `Ctrl+C`. Para fazer um ensaio finito: `--samples 40` (amostras, nao segundos). `--interval-ms` aceita 1..60000.
+
+**Cuidado:** status transitorios podem ser pulados devido ao intervalo de polling, e o monitor nao estabelece prontidao operacional. Fechamento/reinicio do executavel e mudanca de mapa devem ser verificados na pratica. Nao use como sincronizacao para emissao de comandos.
