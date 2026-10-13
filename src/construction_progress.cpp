@@ -1,5 +1,6 @@
 #include "ProcessMemory.h"
 #include "ConstructionProgressMonitor.h"
+#include "ConstructionPointerDiscovery.h"
 #include <chrono>
 #include <cerrno>
 #include <csignal>
@@ -31,15 +32,17 @@ bool addressFrom(const std::string& s,uint32_t& out){
 int main(int argc,char** argv){
  std::vector<uint32_t> bases;std::set<uint32_t> seen;
  std::string csvPath="aoe2hd_construction_progress.csv",phasePath="construction_phase.txt";
+ bool discover=false;
  for(int i=1;i<argc;++i){
   const std::string arg=argv[i];
   if(arg=="--base"&&i+1<argc){
    uint32_t base=0;
    if(!addressFrom(argv[++i],base)){std::cerr<<"Invalid --base\n";return 2;}
    if(seen.insert(base).second)bases.push_back(base);
-  }else if(arg=="--csv"&&i+1<argc)csvPath=argv[++i];
+  }else if(arg=="--discover-pointers")discover=true;
+  else if(arg=="--csv"&&i+1<argc)csvPath=argv[++i];
   else if(arg=="--phase-file"&&i+1<argc)phasePath=argv[++i];
-  else {std::cerr<<"Usage: aoe2hd_construction_progress --base 0xADDRESS [--base 0xADDRESS] [--csv file] [--phase-file file]\n";return 2;}
+  else {std::cerr<<"Usage: aoe2hd_construction_progress --base 0xADDRESS [--base 0xADDRESS] [--csv file] [--phase-file file] [--discover-pointers]\n";return 2;}
  }
  if(bases.empty()){std::cerr<<"At least one --base required\n";return 2;}
  aoe2hd::ProcessMemory memory;
@@ -48,10 +51,17 @@ int main(int argc,char** argv){
  if(!csv){std::cerr<<"Cannot open CSV\n";return 2;}
  csv<<"elapsed_ms,phase,world,player,base,field_offset,address,readable,float_value,raw_u32,in_range,kind\n";
  csv.flush();
+ std::ofstream pointers;
+ if(discover){
+  pointers.open("aoe2hd_construction_pointer_hits.csv",std::ios::trunc);
+  if(!pointers){std::cerr<<"Cannot open pointer CSV\n";return 2;}
+  pointers<<"elapsed_ms,world,player,target,root,root_offset,intermediate,intermediate_offset,depth\n";
+ }
  std::signal(SIGINT,stop);
  std::cout<<"Read-only construction monitor; offset=0xC1C; Ctrl+C to stop.\n";
  aoe2hd::ConstructionProgressMonitor monitor;
  uint32_t lastWorld=0,lastPlayer=0;
+ uint64_t lastDiscovery=0;
  std::string lastPhase;
  const auto start=std::chrono::steady_clock::now();
  while(!stopped){
@@ -67,6 +77,17 @@ int main(int argc,char** argv){
   const auto phase=phaseFrom(phasePath);
   const bool phaseChanged=phase!=lastPhase;
   if(phaseChanged){lastPhase=phase;std::cout<<"["<<ms<<" ms] phase="<<phase<<"\n";}
+  if(discover && (lastDiscovery==0 || static_cast<uint64_t>(ms)-lastDiscovery>=5000)) {
+   lastDiscovery=ms?static_cast<uint64_t>(ms):1;
+   for(uint32_t target:bases) {
+    const auto hits=aoe2hd::FindConstructionPointerReferences(memory,world,target);
+    for(const auto& h:hits)
+     pointers<<ms<<','<<world.snapshot.world<<','<<player->object<<','
+       <<h.target<<','<<h.root<<','<<h.rootOffset<<','<<h.intermediate
+       <<','<<h.intermediateOffset<<','<<h.depth<<'\n';
+   }
+   pointers.flush();
+  }
   auto events=monitor.observe(memory,bases,phaseChanged);
   for(const auto& e:events){
    csv<<ms<<','<<phase<<','<<world.snapshot.world<<','<<player->object
