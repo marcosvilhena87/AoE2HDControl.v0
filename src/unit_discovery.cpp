@@ -1,5 +1,6 @@
 #include "ProcessMemory.h"
 #include "UnitDiscovery.h"
+#include "UnitContentTracker.h"
 #include <chrono>
 #include <csignal>
 #include <fstream>
@@ -28,6 +29,10 @@ int main(int argc,char** argv) {
     using Key=std::tuple<std::string,uint32_t,uint32_t,std::string>;
     std::map<Key,std::tuple<uint32_t,uint32_t,uint32_t>> last;
     uint32_t lastWorld=0,lastPlayer=0;
+    aoe2hd::UnitContentTracker tracker;
+    std::ofstream diff("aoe2hd_unit_changes.csv",std::ios::trunc);
+    if(!diff) {std::cerr<<"Cannot create content diff CSV\n";return 2;}
+    diff<<"elapsed_ms,world,player,source,offset,stride,index,kind,before,after,count\n";
     uint64_t lastSummary=0;
     while(!stopped) {
         auto world=aoe2hd::ReadWorld(memory,memory.moduleBase());
@@ -35,14 +40,24 @@ int main(int argc,char** argv) {
         const auto ms=static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now()-start).count());
         if(!player) {
-            last.clear();lastWorld=lastPlayer=0;
+            last.clear();tracker.reset();lastWorld=lastPlayer=0;
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
             continue;
         }
         if(world.snapshot.world!=lastWorld || player->object!=lastPlayer) {
-            last.clear();lastWorld=world.snapshot.world;lastPlayer=player->object;
+            last.clear();tracker.reset();lastWorld=world.snapshot.world;lastPlayer=player->object;
         }
         auto report=aoe2hd::DiagnoseUnitVectors(memory,world);
+        auto differences=tracker.observe(memory,report.candidates);
+        for(const auto& d:differences) {
+            diff<<ms<<','<<world.snapshot.world<<','<<player->object<<','
+                <<d.source<<','<<d.offset<<','<<d.stride<<','<<d.index<<','
+                <<d.kind<<','<<d.before<<','<<d.after<<','<<d.count<<'\n';
+            std::cout<<"["<<ms<<" ms] "<<d.source<<"+0x"<<std::hex<<d.offset
+                     <<std::dec<<" entry["<<d.index<<"] "<<d.kind<<" "
+                     <<d.before<<" -> "<<d.after<<"\n";
+        }
+        if(!differences.empty())diff.flush();
         bool changed=false;
         for(const auto& c:report.candidates) {
             Key key{c.source,c.offset,c.stride,aoe2hd::UnitCandidateReasonName(c.reason)};
