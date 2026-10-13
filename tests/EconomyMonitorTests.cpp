@@ -22,6 +22,7 @@ int main() {
     assert(start.size()==4 && start[0].session==1);
     assert(start[3].resource=="Gold" && start[3].current==100);
     assert(EconomyCsvRow(10,start[3]).find("10,1,initial,") == 0);
+    assert(EconomyCsvRow(10,start[3]).find(",Gold,,100.00,,") != std::string::npos);
     assert(monitor.observe(1,0x3000,initial,"").empty());
     auto change=ready(0x1000,0x2000,150,230,200,130);
     const auto events=monitor.observe(1,0x3000,change,"");
