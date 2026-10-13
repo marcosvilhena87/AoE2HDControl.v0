@@ -73,3 +73,18 @@ ctest --test-dir build2026 -C Release --output-on-failure
 ### Pasta de trabalho no Windows
 
 A pasta preferida para clonar, atualizar, compilar e executar o projeto é `C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl` (sem o sufixo `Atualizado`). Se a pasta já possuir `.git`, use `git pull origin main`. Se o Git responder `not a git repository`, a pasta não é um clone válido: preserve quaisquer arquivos locais e utilize um clone Git antes de tentar atualizar. Após mover ou renomear uma árvore já compilada, remova somente o diretório gerado `build2026` e reconfigure o CMake para evitar caminhos antigos em `CMakeCache.txt`.
+
+## Monitor econômico contínuo
+
+O programa `aoe2hd_economy_monitor.exe` usa `ReadWorld` e `ReadLocalResources` em consultas periódicas, identifica mudanças no World, jogador local e endereço da tabela e registra apenas alterações observadas de recursos. Se houver perda de leitura ou mudança de partida, emite `Unavailable` e reinicializa sua linha de base. O processo é aberto novamente após fechamento/reinício. Não confundir variações observadas com estatísticas totais de coleta/gasto (mudanças intermediárias podem ser perdidas entre amostras).
+
+```powershell
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl
+git pull origin main
+cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
+cmake --build build2026 --config Release
+ctest --test-dir build2026 -C Release --output-on-failure
+.\build2026\Release\aoe2hd_economy_monitor.exe --interval-ms 250
+```
+
+Aceita `--interval-ms` de 50 a 60000, padrão 250. Interrompa com Ctrl+C. A saída usa floats com duas casas e deltas assinados. Leituras são somente leitura, não atômicas; a medição ainda requer validação em partidas reais. O teste `economy_monitor_tests` cobre variação de recursos, recuperação de falha, troca de World e troca de geração de processo.
