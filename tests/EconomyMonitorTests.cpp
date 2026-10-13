@@ -13,7 +13,7 @@ static ResourceResult ready(uint32_t player,uint32_t table,float food,float wood
 int main() {
     EconomyMonitor monitor;
     ResourceResult unavailable;
-    assert(EconomyCsvHeader().find("elapsed_ms,session,event") == 0);
+    assert(EconomyCsvHeader().find("run_id,elapsed_ms,session,event") == 0);
     auto absence=monitor.observe(0,0,unavailable,"ProcessNotFound");
     assert(absence.size()==1 && absence[0].type=="unavailable");
     assert(monitor.observe(0,0,unavailable,"ProcessNotFound").empty());
