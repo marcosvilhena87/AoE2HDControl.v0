@@ -1,6 +1,7 @@
 #include "ProcessMemory.h"
 #include "UnitDiscovery.h"
 #include "UnitContentTracker.h"
+#include "UnitPointerProbe.h"
 #include <chrono>
 #include <csignal>
 #include <fstream>
@@ -33,6 +34,10 @@ int main(int argc,char** argv) {
     std::ofstream diff("aoe2hd_unit_changes.csv",std::ios::trunc);
     if(!diff) {std::cerr<<"Cannot create content diff CSV\n";return 2;}
     diff<<"elapsed_ms,world,player,source,offset,stride,index,kind,before,after,count\n";
+    std::ofstream evidence("aoe2hd_unit_pointer_evidence.csv",std::ios::trunc);
+    if(!evidence){std::cerr<<"Cannot create pointer evidence CSV\n";return 2;}
+    evidence<<"elapsed_ms,world,player,source,offset,stride,count,sampled,nonzero,readable_targets,distinct_targets,plausible_vtables,modal_vtable,matching_vtables\n";
+    uint64_t lastEvidence=0;
     uint64_t lastSummary=0;
     while(!stopped) {
         auto world=aoe2hd::ReadWorld(memory,memory.moduleBase());
@@ -48,6 +53,19 @@ int main(int argc,char** argv) {
             last.clear();tracker.reset();lastWorld=world.snapshot.world;lastPlayer=player->object;
         }
         auto report=aoe2hd::DiagnoseUnitVectors(memory,world);
+        if(lastEvidence==0 || ms-lastEvidence>=5000) {
+            lastEvidence=ms ? ms : 1;
+            const auto probes=aoe2hd::ProbeUnitPointers(
+                memory,world,report.candidates,memory.moduleBase());
+            for(const auto& e:probes) {
+                evidence<<ms<<','<<world.snapshot.world<<','<<player->object<<','
+                        <<e.source<<','<<e.offset<<','<<e.stride<<','<<e.count<<','
+                        <<e.sampled<<','<<e.nonzero<<','<<e.readableTargets<<','
+                        <<e.distinctTargets<<','<<e.plausibleVtables<<','
+                        <<e.firstVtable<<','<<e.matchingVtables<<'\n';
+            }
+            evidence.flush();
+        }
         auto differences=tracker.observe(memory,report.candidates);
         for(const auto& d:differences) {
             diff<<ms<<','<<world.snapshot.world<<','<<player->object<<','
