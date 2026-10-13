@@ -3,7 +3,7 @@ project(AoE2HDControl LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(aoe2hd_world src/WorldReader.cpp src/WorldMonitor.cpp src/ResourceReader.cpp src/EconomyMonitor.cpp src/PopulationReader.cpp src/GameplayReadinessMonitor.cpp src/DerivedEventDetector.cpp src/UnitDiscovery.cpp src/UnitContentTracker.cpp src/UnitPointerProbe.cpp src/ObjectFieldSampler.cpp src/ProductionProgressProbe.cpp src/AbsoluteProgressMonitor.cpp src/ConstructionProgressMonitor.cpp src/ConstructionPointerDiscovery.cpp src/EntityHealthMonitor.cpp)
+add_library(aoe2hd_world src/WorldReader.cpp src/WorldMonitor.cpp src/ResourceReader.cpp src/EconomyMonitor.cpp src/PopulationReader.cpp src/GameplayReadinessMonitor.cpp src/DerivedEventDetector.cpp src/UnitDiscovery.cpp src/UnitContentTracker.cpp src/UnitPointerProbe.cpp src/ObjectFieldSampler.cpp src/ProductionProgressProbe.cpp src/AbsoluteProgressMonitor.cpp src/ConstructionProgressMonitor.cpp src/ConstructionPointerDiscovery.cpp src/EntityHealthMonitor.cpp src/SelectionPointerMonitor.cpp)
 target_include_directories(aoe2hd_world PUBLIC include)
 
 if(WIN32)
@@ -83,6 +83,9 @@ if(BUILD_TESTING)
   add_executable(entity_health_monitor_tests tests/EntityHealthMonitorTests.cpp)
   target_link_libraries(entity_health_monitor_tests PRIVATE aoe2hd_world)
   add_test(NAME entity_health_monitor_tests COMMAND entity_health_monitor_tests)
+  add_executable(selection_pointer_monitor_tests tests/SelectionPointerMonitorTests.cpp)
+  target_link_libraries(selection_pointer_monitor_tests PRIVATE aoe2hd_world)
+  add_test(NAME selection_pointer_monitor_tests COMMAND selection_pointer_monitor_tests)
 endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
