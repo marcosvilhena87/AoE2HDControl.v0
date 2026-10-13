@@ -103,3 +103,19 @@ ctest --test-dir build2026 -C Release --output-on-failure
 ```
 
 A observação por polling (250 ms) não distingue automaticamente coleta de outras fontes de ganho nem capta necessariamente todos os eventos intermediários. Não é uma medição exata de coleta/gasto brutos. O programa continua somente leitura em relação ao jogo; escreve apenas o CSV no disco local.
+
+
+## Análise de sessões CSV
+
+O analisador `scripts/analyze_economy.py` sumariza por `run_id`, `session` e recurso; `--output aoe2hd_summary.csv` exporta um CSV com saldos, aumentos/reduções observados, duração e variação líquida por minuto. O monitor agora inclui `run_id` gerado a partir do horário epoch em microssegundos na inicialização, diferenciando execuções; mantém o número de sessão por partida observada. CSVs antigos são lidos com `run_id=legacy`. Para eventos `initial`, `previous` e `delta` ficam vazios. Aumentos/reduções observados representam mudanças de **saldo**, não coleta/gasto bruto.
+
+```powershell
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl
+git pull origin main
+cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
+cmake --build build2026 --config Release
+ctest --test-dir build2026 -C Release --output-on-failure
+python scripts/analyze_economy.py aoe2hd_economy.csv --output aoe2hd_summary.csv
+```
+
+O CTest adiciona `economy_analyzer_tests` quando encontra Python 3 instalado.
