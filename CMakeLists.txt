@@ -3,7 +3,7 @@ project(AoE2HDControl LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(aoe2hd_world src/WorldReader.cpp src/WorldMonitor.cpp src/ResourceReader.cpp src/EconomyMonitor.cpp src/PopulationReader.cpp src/GameplayReadinessMonitor.cpp src/DerivedEventDetector.cpp src/UnitDiscovery.cpp)
+add_library(aoe2hd_world src/WorldReader.cpp src/WorldMonitor.cpp src/ResourceReader.cpp src/EconomyMonitor.cpp src/PopulationReader.cpp src/GameplayReadinessMonitor.cpp src/DerivedEventDetector.cpp src/UnitDiscovery.cpp src/UnitContentTracker.cpp)
 target_include_directories(aoe2hd_world PUBLIC include)
 
 if(WIN32)
@@ -50,6 +50,9 @@ if(BUILD_TESTING)
   add_executable(unit_discovery_tests tests/UnitDiscoveryTests.cpp)
   target_link_libraries(unit_discovery_tests PRIVATE aoe2hd_world)
   add_test(NAME unit_discovery_tests COMMAND unit_discovery_tests)
+  add_executable(unit_content_tracker_tests tests/UnitContentTrackerTests.cpp)
+  target_link_libraries(unit_content_tracker_tests PRIVATE aoe2hd_world)
+  add_test(NAME unit_content_tracker_tests COMMAND unit_content_tracker_tests)
 endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
