@@ -401,3 +401,8 @@ O monitor emite `derived` para aumentos observados de `VillagerCount` (`Villager
 ## Descoberta experimental de vetores de unidades
 
 Execute `build2026\\Release\\aoe2hd_unit_discovery.exe --csv aoe2hd_unit_candidates.csv` com uma partida aberta e treine um aldeão. A ferramenta **não identifica unidades ainda**: examina somente estruturas candidatas a vetores dentro dos primeiros 0x400 bytes do jogador local, limita tamanho/leituras e registra mudanças de contagem no CSV. Compare candidatos antes/depois do treinamento; muitos serão falsos positivos e vetores vazios nao sao descobertos. A leitura é externa e somente leitura. Não use os endereços de uma sessão em outra. Teste `unit_discovery_tests`.
+
+
+### Unit discovery v2: diagnostico de candidatos
+
+A varredura agora inspeciona `LocalPlayer` **e** `World` (ate 0x400 bytes por raiz, com limite rigido de 0x800), sem afirmar que um candidato seja uma lista de unidades. O CSV agrega `source` e `reason` (`Accepted`, `Empty` ou `UnreadableEntries`), alem de contadores de rejeicao: `read_failures`, `nonvector`, `invalid_bounds`, `oversized`, `misaligned` e `unreadable`. Linhas `Summary` sao emitidas a cada cerca de 5 segundos durante snapshots estruturais validos, mesmo sem candidatos. Compare capturas antes/depois de treinar um aldeao (populacao 4/5 para 5/5, limite constante). O detector nao identifica unidades diretamente e pode produzir falsos positivos.
