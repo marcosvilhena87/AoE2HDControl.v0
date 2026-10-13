@@ -391,3 +391,8 @@ A semântica da contagem de aldeões e dos dois contadores populacionais ainda r
 ## Readiness gate for new matches
 
 The continuous monitor uses `GameplayReadinessMonitor` to withhold telemetry until two consecutive coherent, non-all-zero snapshots of the same World/player/table have been observed. The initial all-zero transitional frame is no longer recorded as fake collection/population changes. Once activated, zero balances are permitted. This is an observational heuristic, not proof of game-engine readiness. Tests cover zero-to-initial transition, World change, and invalid intermediate population. Run `ctest --test-dir build2026 -C Release --output-on-failure`.
+
+
+## Eventos econômicos derivados (experimental)
+
+O monitor emite `derived` para aumentos observados de `VillagerCount` (`VillagerProduced`) e de `PopulationLimit` (`PopulationCapacityIncreased`). Esses fatos são derivados dos contadores, não da identificação de unidades nem de edifícios. Quando observa gasto compatível de 50 Food ou 25 Wood nos até 120 segundos anteriores, emite opcionalmente `hypothesis` (`PossibleVillagerFoodCost` ou `PossibleHouseWoodCost`). A associação é apenas plausível, nunca causalmente demonstrada. Não associa entre sessões e descarta candidatos após perda de leitura. As linhas usam o esquema CSV existente; o analisador de recursos continua ignorando `derived` e `hypothesis`. Teste: `derived_event_tests`.
