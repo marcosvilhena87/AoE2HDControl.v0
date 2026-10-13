@@ -421,3 +421,8 @@ O executavel `aoe2hd_unit_discovery` agora gera tambem `aoe2hd_unit_changes.csv`
 ### Object field sampling (experimental)
 
 The unit discovery executable also creates `aoe2hd_object_fields.csv`. It samples 16 objects (maximum) from each of the previously examined World vectors at offsets `0x88`, `0xA0`, `0xB0` using eight-byte entries, inspecting the first 64 bytes (16 32-bit words) of each readable target. The first observation becomes the baseline; subsequent samples record `field_changed` or `object_changed`, without assigning semantics to field offsets. A change of World/player or an unavailable world resets the baseline. Invalid/incomplete object reads do not update it. These are structural probes, NOT established unit identifiers, types, or coordinates. Test `object_field_sampler_tests`.
+
+
+### ObjectFieldSampler v2 (expanded sampling)
+
+The read-only discovery executable now samples up to 24 evenly spaced objects per candidate at `World+0x88`, `World+0xA0`, and `World+0xB0`, reading a maximum of 128 bytes per readable object. `World+0xA0` supports stride 4; other candidates prefer stride 8. New `aoe2hd_object_field_summary.csv` reports periodic objects/fields/changes/read_failures, even when no field changes occur. `aoe2hd_localplayer_raw.csv` isolates observed changes at `LocalPlayer+0x18` with stride 8, without inferring unit semantics. `aoe2hd_object_fields.csv` still reports detailed field changes. The first sample is a baseline; partial reads are discarded. These probes are not a validated unit reader.
