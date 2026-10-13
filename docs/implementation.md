@@ -156,3 +156,8 @@ A semântica da contagem de aldeões e dos dois contadores populacionais ainda r
 ## GameplayReadinessMonitor (experimental)
 
 After a World/player/table change, the economy monitor waits for two consecutive coherent samples with at least one nonzero economy/population field before writing an initial baseline. An observed all-zero transitional snapshot is discarded. Once running, legitimate zero balances are allowed; a failure resets readiness. This is a heuristic and can delay or miss fully zero-valued legitimate games. It does **not** assert a game-engine gameplay-ready flag. `gameplay_readiness_tests` reproduces the all-zero to starting-resources transition. Reconfigure with `cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32`, rebuild, then run CTest.
+
+
+## DerivedEventDetector
+
+Depois da amostragem de recursos e população, `DerivedEventDetector` produz eventos adicionais no mesmo CSV. As linhas de tipo `derived` representam incrementos de `VillagerCount` e `PopulationLimit`. As linhas `hypothesis` fazem associação temporal opcional entre gastos exatos de 50 Food e aldeões ou 25 Wood e capacidade populacional, com janela de 120 s. Não há confirmação causal e o gasto pode ser de outra ação. Cada débito é usado uma vez, filas são limpas em mudanças de sessão e períodos indisponíveis, e os eventos de inicialização não geram eventos derivados. O analisador econômico original mantém o comportamento anterior.
