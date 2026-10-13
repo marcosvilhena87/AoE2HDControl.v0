@@ -46,6 +46,9 @@ int main(int argc,char** argv) {
     if(!coverage){std::cerr<<"Cannot create summary CSV\n";return 2;}
     coverage<<"elapsed_ms,world,player,offset,objects,fields,changes,read_failures\n";
     uint64_t lastCoverage=0;
+    std::ofstream localRaw("aoe2hd_localplayer_raw.csv",std::ios::trunc);
+    if(!localRaw){std::cerr<<"Cannot create local player CSV\n";return 2;}
+    localRaw<<"elapsed_ms,world,player,offset,stride,index,before,after,kind\n";
     uint64_t lastEvidence=0;
     uint64_t lastSummary=0;
     while(!stopped) {
@@ -91,6 +94,10 @@ int main(int argc,char** argv) {
         }
         auto differences=tracker.observe(memory,report.candidates);
         for(const auto& d:differences) {
+            if(d.source=="LocalPlayer" && d.offset==0x18 && d.stride==8)
+                localRaw<<ms<<','<<world.snapshot.world<<','<<player->object<<','
+                        <<d.offset<<','<<d.stride<<','<<d.index<<','
+                        <<d.before<<','<<d.after<<','<<d.kind<<'\n';
             diff<<ms<<','<<world.snapshot.world<<','<<player->object<<','
                 <<d.source<<','<<d.offset<<','<<d.stride<<','<<d.index<<','
                 <<d.kind<<','<<d.before<<','<<d.after<<','<<d.count<<'\n';
@@ -98,7 +105,7 @@ int main(int argc,char** argv) {
                      <<std::dec<<" entry["<<d.index<<"] "<<d.kind<<" "
                      <<d.before<<" -> "<<d.after<<"\n";
         }
-        if(!differences.empty())diff.flush();
+        if(!differences.empty()){diff.flush();localRaw.flush();}
         bool changed=false;
         for(const auto& c:report.candidates) {
             Key key{c.source,c.offset,c.stride,aoe2hd::UnitCandidateReasonName(c.reason)};
