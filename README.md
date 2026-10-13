@@ -536,3 +536,10 @@ Output files: `aoe2hd_entity_type_fields.csv` (one row per object and offset) an
 The example addresses were observed in a prior match and are not stable across sessions. Discover fresh addresses using \`aoe2hd_selected_entity.exe\` first; never presume prior raw object addresses are valid. This is a read-only diagnostic tool, not automatic entity enumeration or confirmed type/owner identification.
 
 **Local integration note:** The SelectedEntityReader was previously distributed as local-only files, not yet in GitHub main. Preserve its files and ensure \`src/SelectedEntityReader.cpp\` remains in the \`aoe2hd_world\` sources alongside \`src/EntityIdentityReader.cpp\` when merging locally.
+
+
+### World-validated ownership (EntityIdentityReader v1.1)
+
+`aoe2hd_entity_identity.exe` now appends `ownership`, `world_ready`, and `local_player` columns to its CSV. The `ownership` field compares the raw candidate `Entity+0x10` against validated `WorldReader` player object addresses: `local`, `other_player`, `unmatched`, or `unknown`. This is **not diplomacy classification**: `other_player` may be an enemy, ally, or Gaia. `unknown` is returned if the World snapshot is not ready; `unmatched` means the candidate pointer did not equal any player in that snapshot. No absolute addresses are hardcoded.
+
+If `SelectedEntityReader` was installed using the earlier local-only zip, keep its source files and reinsert `src/SelectedEntityReader.cpp` in the `aoe2hd_world` source list after pulling. The identity reader itself is already tracked in GitHub.
