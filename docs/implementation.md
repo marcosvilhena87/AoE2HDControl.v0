@@ -119,3 +119,19 @@ python scripts/analyze_economy.py aoe2hd_economy.csv --output aoe2hd_summary.csv
 ```
 
 O CTest adiciona `economy_analyzer_tests` quando encontra Python 3 instalado.
+
+
+## PopulationReader experimental (quatro estados, uma partida)
+
+Foi observado em AoK HD.exe 5.8.INT (x86): `ResourceTable+0x10` vagas livres (1,0,5,4), `+0x2C` população utilizada (4,5,5,6), `+0x4C` contador semelhante (4,5,5,6), `+0x94` aldeões (3,4,4,5). O limite estimado é população + vagas (5,5,10,10). O antigo candidato `+0x104` permaneceu em 5 após a casa e **não** deve ser usado como limite.
+
+`PopulationReader` exige um World e ResourceResult válidos, lê os quatro floats por ponteiros relativos e verifica valores inteiros finitos não negativos, dois contadores iguais, aldeões <= população e estabilidade de ponteiros antes/depois. Leituras externas **não são atômicas**; valores transientes podem retornar `InconsistentCounters`. População ainda **não** é monitorada continuamente nem adicionada ao CSV; por enquanto aparece apenas no `aoe2hd_probe.exe` com `PopulationStatus=Ready`. Código de saída 4 significa falha nessa etapa. A validação em uma segunda partida e com tropas militares continua pendente.
+
+```powershell
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_II_HD\AoE2HDControl
+git pull origin main
+cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
+cmake --build build2026 --config Release
+ctest --test-dir build2026 -C Release --output-on-failure
+.\build2026\Release\aoe2hd_probe.exe
+```
