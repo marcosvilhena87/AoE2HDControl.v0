@@ -365,3 +365,8 @@ A observação por polling (250 ms) não distingue automaticamente coleta de out
 ## Analisador econômico por sessão
 
 Execute `python scripts/analyze_economy.py aoe2hd_economy.csv --output aoe2hd_summary.csv`. O analisador (Python, sem dependências externas) agrupa por `run_id` e `session`, e calcula saldos iniciais/finais, aumentos e reduções observados, líquido e variação líquida por minuto. Lê arquivos anteriores sem `run_id` como `legacy`. Os registros iniciais agora deixam `previous` e `delta` vazios. O monitor sobrescreve o CSV a cada execução; use nomes distintos para preservar capturas.
+
+
+## Leitura experimental da população
+
+O `aoe2hd_probe.exe` agora tenta ler população utilizada (`ResourceTable+0x2C`), contador espelho (`+0x4C`), vagas disponíveis (`+0x10`) e aldeões (`+0x94`), todos `float32`. Calcula capacidade = população + vagas. Os offsets foram observados em **quatro estados controlados de uma única partida**; a identificação semântica ainda é experimental e deve ser validada em outra partida e com unidades militares. O probe retorna código 4 se a população não puder ser validada.
