@@ -10,6 +10,27 @@ EntityIdentity ReadEntityIdentity(const MemoryReader& memory,uint32_t object){
  s.candidateTypeRef=values[3];s.candidateOwner=values[4];
  s.readable=true;return s;
 }
+EntityOwnership ClassifyEntityOwnership(const EntityIdentity& entity,const WorldResult& world){
+ if(!entity.readable||!entity.candidateOwner||!world.ready())return EntityOwnership::Unknown;
+ const auto* local=GetLocalPlayer(world);
+ if(!local||!local->object)return EntityOwnership::Unknown;
+ if(entity.candidateOwner==local->object)return EntityOwnership::Local;
+ for(size_t i=0;i<world.snapshot.players.size();++i){
+  if(i==world.snapshot.localIndex)continue;
+  if(world.snapshot.players[i].object==entity.candidateOwner)
+   return EntityOwnership::OtherPlayer;
+ }
+ return EntityOwnership::Unmatched;
+}
+const char* EntityOwnershipName(EntityOwnership ownership){
+ switch(ownership){
+ case EntityOwnership::Local:return "local";
+ case EntityOwnership::OtherPlayer:return "other_player";
+ case EntityOwnership::Unmatched:return "unmatched";
+ case EntityOwnership::Unknown:return "unknown";
+ }
+ return "unknown";
+}
 OwnerRelation CompareCandidateOwners(const EntityIdentity& a,const EntityIdentity& b){
  if(!a.readable||!b.readable||!a.candidateOwner||!b.candidateOwner)
   return OwnerRelation::Unknown;
