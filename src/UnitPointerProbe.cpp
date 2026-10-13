@@ -1,6 +1,7 @@
 #include "UnitPointerProbe.h"
 #include <algorithm>
 #include <set>
+#include <map>
 #include <tuple>
 namespace aoe2hd {
 std::vector<UnitPointerEvidence> ProbeUnitPointers(
