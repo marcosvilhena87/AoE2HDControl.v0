@@ -1,6 +1,6 @@
 # AoE2Control como referência conceitual
 
-Última atualização: 2026-10-04.
+Última atualização: 2026-10-12.
 
 Este documento usa o projeto **AoE2Control para Age of Empires II: Definitive Edition** apenas como **referência conceitual e arquitetural** para orientar a engenharia reversa do **Age of Empires II HD (AoK HD.exe 5.8.INT, x86)**.
 
@@ -77,7 +77,7 @@ API estável
 | jogador local | assigned player / player id | ✅ `World+0x174` estruturalmente forte |
 | lista de jogadores | player collection | ✅ `World.mPlayers` |
 | classe/tipo do jogador | human / computer / Gaia | ✅ RTTI + `humanity` parcial |
-| número/cor visual do jogador | player id / color | 🔴 ainda não localizado |
+| número/cor visual do jogador | player id / color | ✅ `ResolvedPlayerConfig+0x4C = playerNumberIndex` (Jog.1→0 etc.) |
 | recursos | player attributes | 🔴 |
 | população | player attributes / facts | 🔴 |
 | objetos por jogador/classe | object queries | 🔴 |
@@ -154,7 +154,7 @@ ResolvedPlayerConfig.humanity
 World.mLocalPlayerIndex
 ~~~
 
-O maior buraco semântico imediato continua sendo a coluna visual **"Jog." 1–8 / número-cor**.
+A coluna visual **"Jog." 1–8** já foi mapeada de forma independente como `ResolvedPlayerConfig+0x4C = playerNumberIndex`; o próximo foco é consolidar readiness estrutural e leitura dos recursos.
 
 ## Referência de mapa
 
