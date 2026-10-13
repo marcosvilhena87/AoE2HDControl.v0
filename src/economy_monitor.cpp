@@ -1,5 +1,6 @@
 #include "EconomyMonitor.h"
 #include "ProcessMemory.h"
+#include "WorldMonitor.h"
 #include <chrono>
 #include <csignal>
 #include <cstdint>
