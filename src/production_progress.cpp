@@ -2,6 +2,7 @@
 #include "ProductionProgressProbe.h"
 #include "ResourceReader.h"
 #include "PopulationReader.h"
+#include "AbsoluteProgressMonitor.h"
 #include <chrono>
 #include <csignal>
 #include <fstream>
@@ -35,6 +36,11 @@ int main(int argc,char** argv) {
     csv.flush();
     aoe2hd::ProcessMemory memory;
     if(!memory.open()){std::cerr<<"AoK HD.exe not found\n";return 2;}
+    std::ofstream absolute("aoe2hd_absolute_progress.csv",std::ios::trunc);
+    if(!absolute){std::cerr<<"Cannot create absolute progress CSV\n";return 2;}
+    absolute<<"elapsed_ms,phase,world,player,population_used,villagers,address,readable16,value16,readable32,value32,kind\n";
+    const std::vector<uint32_t> watched{0x142E8E54u,0x005AD5ECu,0x005AFC30u};
+    aoe2hd::AbsoluteProgressMonitor absoluteMonitor;
     std::signal(SIGINT,stop);
     std::cout<<"Read-only production progress probe; CSV="<<csvPath
              <<"; phase file="<<phasePath<<". Ctrl+C to stop.\n";
@@ -47,11 +53,11 @@ int main(int argc,char** argv) {
         auto world=aoe2hd::ReadWorld(memory,memory.moduleBase());
         const auto* player=aoe2hd::GetLocalPlayer(world);
         if(!player) {
-            previous.clear();lastWorld=lastPlayer=0;
+            previous.clear();absoluteMonitor.reset();lastWorld=lastPlayer=0;
             std::this_thread::sleep_for(std::chrono::milliseconds(250));continue;
         }
         if(world.snapshot.world!=lastWorld || player->object!=lastPlayer) {
-            previous.clear();lastWorld=world.snapshot.world;lastPlayer=player->object;
+            previous.clear();absoluteMonitor.reset();lastWorld=world.snapshot.world;lastPlayer=player->object;
         }
         auto resources=aoe2hd::ReadLocalResources(memory,world);
         aoe2hd::PopulationResult population;
@@ -68,6 +74,14 @@ int main(int argc,char** argv) {
         }
         uint32_t used=population.ready()?population.snapshot.used:0;
         uint32_t villagers=population.ready()?population.snapshot.villagers:0;
+        const auto direct=absoluteMonitor.observe(memory,watched,phaseChanged);
+        for(const auto& value:direct) {
+            absolute<<ms<<','<<phase<<','<<world.snapshot.world<<','<<player->object
+                    <<','<<used<<','<<villagers<<','<<value.address<<','
+                    <<value.readable16<<','<<value.value16<<','
+                    <<value.readable32<<','<<value.value32<<','<<value.kind<<'\n';
+        }
+        if(!direct.empty())absolute.flush();
         unsigned emitted=0;
         for(const auto& row:rows) {
             Key key{row.vectorOffset,row.index,row.fieldOffset,row.encoding};
