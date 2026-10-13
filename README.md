@@ -543,3 +543,14 @@ The example addresses were observed in a prior match and are not stable across s
 `aoe2hd_entity_identity.exe` now appends `ownership`, `world_ready`, and `local_player` columns to its CSV. The `ownership` field compares the raw candidate `Entity+0x10` against validated `WorldReader` player object addresses: `local`, `other_player`, `unmatched`, or `unknown`. This is **not diplomacy classification**: `other_player` may be an enemy, ally, or Gaia. `unknown` is returned if the World snapshot is not ready; `unmatched` means the candidate pointer did not equal any player in that snapshot. No absolute addresses are hardcoded.
 
 If `SelectedEntityReader` was installed using the earlier local-only zip, keep its source files and reinsert `src/SelectedEntityReader.cpp` in the `aoe2hd_world` source list after pulling. The identity reader itself is already tracked in GitHub.
+
+
+### Unified selected-entity telemetry
+
+\`aoe2hd_selected_telemetry.exe\` automatically resolves the validated World/LocalPlayer snapshot, reads the two candidate selection slots (\`+0x15C\`, \`+0x160\`), then combines entity identity (\`+0x00/+0x08/+0x0C/+0x10\`), HP (\`+0x34\`) and world-based ownership in one event CSV. This target is independent of the locally installed \`SelectedEntityReader\`.
+
+\`\`\`powershell
+.\build2026\Release\aoe2hd_selected_telemetry.exe --csv aoe2hd_selected_telemetry.csv
+\`\`\`
+
+It runs read-only until Ctrl+C, sampling about every 250 ms, emitting rows on changes only. CSV statuses include \`ready\`, \`none\`, \`multiple_or_transition\`, \`world_unavailable\`, \`hp_invalid\`, and read/consistency failures. The monitor requires both selection slots to match for a single-object reading; it never invents the selected type, and owner \`other_player\` does **not** imply hostile diplomatic status. Raw candidate IDs/owner/type-reference values remain experimental. Changing or restarting the match invalidates previously captured object addresses. Existing CSV at the supplied path is overwritten when the tool starts.
