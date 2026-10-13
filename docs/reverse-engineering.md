@@ -745,3 +745,24 @@ Depois:
 2. fechar GetLocalPlayer() como API pública
 3. mapear Food/Wood/Gold/Stone
 ~~~
+
+## Captura de inicialização até gameplay — 2026-10-12
+
+Sessão x32dbg: `AoK HD.exe 5.8.INT`, `moduleBase=0x003B0000`, novo `World*=0x0F5428D0`.
+
+Linha do tempo observada:
+
+1. `0x005DE68B` publica o novo `World*` em `Owner+0xC8`.
+2. `mPlayers` inicialmente apresenta `begin=end=capacityEnd=0`.
+3. Em `FUN_007288B0`, runtime `0x006D8A0C/11/19`, são publicados `begin=0x17E24EE8`, `end=0x17E24F00` e `capacityEnd=0x17E24F00` (três slots de 8 bytes).
+4. **Os 24 bytes dos três slots estavam zerados mesmo após o resize:** size 3 não comprova `WorldPlayer*`.
+5. Hardware breakpoint em `0x17E24EE8` capturou a primeira entry parcialmente preenchida: `object=0x13A78734`, `controlBlock=0`.
+6. `0x00648F75: mov [ebx+4],edx` publicou `controlBlock=0x13A78728`. `object-controlBlock=0x0C`.
+7. Sem disparo dos breakpoints nas posições `0x17E24EF0` e `0x17E24EF8`, ambas foram posteriormente vistas preenchidas, com o vetor no mesmo buffer. Ainda não se conhece a causa nem a ordem dessas escritas.
+8. Snapshot final: Gaia `0x13A78734` / cb `0x13A78728`, Humano `0x1B11A85C` / cb `0x1B11A850`, IA `0x17F11854` / cb `0x17F11848`.
+9. Vtables, back-pointers para `World*=0x0F5428D0` e campo `+0x08=2/1/3` coincidiram; `mLocalPlayerIndex=1` resolve para HumanOrCoop.
+10. A partida foi confirmada no mapa jogável com unidades selecionáveis e comandos disponíveis.
+
+**Evidência forte:** há diferença real entre `World*` publicado, vetor dimensionado, par shared_ptr-like parcialmente publicado e jogadores estruturalmente válidos. **Não demonstrado:** instante exato em que ambos os últimos jogadores foram gravados, primeira transição `IsWorldStructurallyReady=false→true` ou suficiência do predicado estrutural para qualquer operação em todos os estados.
+
+Critério proposto para um validador de leitura: resolver a cadeia atual, verificar vtable de World, validar ordem/alinhamento/limites de `begin/end/cap` e tamanho plausível, conferir `localPlayerIndex` dentro do vetor e objetos/controles necessários não nulos, confirmar vtables e back-pointers. Fazer leituras com falha segura; não desreferenciar ponteiros externos sem proteção, nem cacheá-los indefinidamente. `GameplayReady` requer verificação adicional e ainda não está formalizado.
