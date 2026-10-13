@@ -151,3 +151,8 @@ ctest --test-dir build2026 -C Release --output-on-failure
 ```
 
 A semântica da contagem de aldeões e dos dois contadores populacionais ainda requer verificação em outra partida e com unidades militares. A captura é de leitura não atômica, portanto pode retornar `PopulationUnavailable` temporariamente.
+
+
+## GameplayReadinessMonitor (experimental)
+
+After a World/player/table change, the economy monitor waits for two consecutive coherent samples with at least one nonzero economy/population field before writing an initial baseline. An observed all-zero transitional snapshot is discarded. Once running, legitimate zero balances are allowed; a failure resets readiness. This is a heuristic and can delay or miss fully zero-valued legitimate games. It does **not** assert a game-engine gameplay-ready flag. `gameplay_readiness_tests` reproduces the all-zero to starting-resources transition. Reconfigure with `cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32`, rebuild, then run CTest.
