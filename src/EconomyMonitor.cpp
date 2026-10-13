@@ -25,7 +25,7 @@ std::string escaped(const std::string& s) {
 }
 }
 std::string EconomyCsvHeader() {
-    return "elapsed_ms,session,event,world,local_player,resource_table,resource,previous,current,delta,details";
+    return "run_id,elapsed_ms,session,event,world,local_player,resource_table,resource,previous,current,delta,details";
 }
 std::string EconomyCsvRow(uint64_t elapsedMs, const EconomyEvent& e) {
     std::ostringstream s;
@@ -33,7 +33,8 @@ std::string EconomyCsvRow(uint64_t elapsedMs, const EconomyEvent& e) {
     s << elapsedMs << ',' << e.session << ',' << e.type << ','
       << e.world << ',' << e.player << ',' << e.table << ','
       << e.resource << ',';
-    if (e.hasValues) s << fixed(e.previous) << ',' << fixed(e.current) << ',' << fixed(e.delta);
+    if (e.hasValues && e.type == "initial") s << ',' << fixed(e.current) << ',';
+    else if (e.hasValues) s << fixed(e.previous) << ',' << fixed(e.current) << ',' << fixed(e.delta);
     else s << ",,";
     s << ',' << escaped(e.text);
     return s.str();
