@@ -312,3 +312,7 @@ Snapshot final validado por vtable, back-pointer e campo `+0x08`:
 Os três objetos apontavam em `+0x04` para `World*=0x0F5428D0`; todos obedeciam a `object=controlBlock+0x0C`. O índice local **1** selecionava HumanOrCoop. O usuário confirmou **mapa jogável, unidades selecionáveis e comandos disponíveis** nesse estado.
 
 **Limite da evidência:** os breakpoints de escrita nas entradas 1 e 2 não dispararam apesar de seus campos aparecerem preenchidos posteriormente, sem realocação do buffer. Isso não estabelece a ordem nem o instante exato da publicação dessas entradas; a causa da ausência de disparo permanece indeterminada. A coincidência de prontidão estrutural com gameplay jogável foi observada nesse snapshot, **não** a primeira transição para gameplay-ready. Próximas prioridades: `IsWorldStructurallyReady()` com leituras seguras, instrumentar primeira transição e então implementar leitura de recursos.
+
+## Protótipo de leitura (C++17)
+
+Há agora um **protótipo experimental e somente leitura** com `ReadWorld()`, `GetLocalPlayer()` e diagnóstico `aoe2hd_probe`, além de testes unitários com memória simulada. Para instruções de compilação Win32, limitações de prontidão e estados suportados, consulte [docs/implementation.md](docs/implementation.md). Não há ainda API de comandos nem garantia de prontidão operacional.
