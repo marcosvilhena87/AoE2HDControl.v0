@@ -1,5 +1,6 @@
 #include "EconomyMonitor.h"
 #include "PopulationReader.h"
+#include "GameplayReadinessMonitor.h"
 #include "ProcessMemory.h"
 #include "WorldMonitor.h"
 #include <chrono>
@@ -51,6 +52,8 @@ int main(int argc, char** argv) {
     if (!csv) return 2;
     std::signal(SIGINT, onSignal);
     aoe2hd::EconomyMonitor monitor;
+    aoe2hd::GameplayReadinessMonitor readiness;
+    bool waitingReported = false;
     std::cout << "Read-only economy monitoring, interval=" << intervalMs
               << "ms, CSV=" << csvPath << ". Ctrl+C to stop.\n";
     const auto started = std::chrono::steady_clock::now();
@@ -84,6 +87,17 @@ int main(int argc, char** argv) {
                 resources = {};
             }
         }
+        const auto state = readiness.observe(generation, world.snapshot.world, resources, population);
+        if (state == aoe2hd::GameplayReadinessMonitor::State::Waiting &&
+            resources.ready() && population.ready()) {
+            if (!waitingReported) std::cout << "WaitingForGameplay: stabilizing new match\n";
+            waitingReported = true;
+            // Explicitly reset the economy baseline; do not emit spurious initial-zero events.
+            // A waiting state must not be written as an economic event.
+            std::this_thread::sleep_for(std::chrono::milliseconds(intervalMs));
+            continue;
+        }
+        waitingReported = false;
         auto events = monitor.observe(generation, world.snapshot.world, resources, failure);
         auto populationEvents = monitor.observePopulation(population);
         events.insert(events.end(), populationEvents.begin(), populationEvents.end());
