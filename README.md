@@ -386,3 +386,8 @@ ctest --test-dir build2026 -C Release --output-on-failure
 ```
 
 A semântica da contagem de aldeões e dos dois contadores populacionais ainda requer verificação em outra partida e com unidades militares. A captura é de leitura não atômica, portanto pode retornar `PopulationUnavailable` temporariamente.
+
+
+## Readiness gate for new matches
+
+The continuous monitor uses `GameplayReadinessMonitor` to withhold telemetry until two consecutive coherent, non-all-zero snapshots of the same World/player/table have been observed. The initial all-zero transitional frame is no longer recorded as fake collection/population changes. Once activated, zero balances are permitted. This is an observational heuristic, not proof of game-engine readiness. Tests cover zero-to-initial transition, World change, and invalid intermediate population. Run `ctest --test-dir build2026 -C Release --output-on-failure`.
