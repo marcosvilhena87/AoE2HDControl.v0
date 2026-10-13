@@ -13,7 +13,8 @@ struct Fake:MemoryReader {
 };
 int main(){
  Fake m;WorldResult w;w.status=WorldStatus::Ready;
- w.snapshot.world=0x20000;w.snapshot.localIndex=0;
+ w.snapshot.world=0x20000;w.snapshot.localIndex=1;
+ PlayerSnapshot gaia;gaia.object=0x21000;w.snapshot.players.push_back(gaia);
  PlayerSnapshot p;p.object=0x30000;w.snapshot.players.push_back(p);
  const uint32_t target=0x50000;
  m.words[0x20000+0x18]=target;
