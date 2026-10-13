@@ -2,6 +2,7 @@
 #include "UnitDiscovery.h"
 #include "UnitContentTracker.h"
 #include "UnitPointerProbe.h"
+#include "ObjectFieldSampler.h"
 #include <chrono>
 #include <csignal>
 #include <fstream>
@@ -37,6 +38,10 @@ int main(int argc,char** argv) {
     std::ofstream evidence("aoe2hd_unit_pointer_evidence.csv",std::ios::trunc);
     if(!evidence){std::cerr<<"Cannot create pointer evidence CSV\n";return 2;}
     evidence<<"elapsed_ms,world,player,source,offset,stride,count,sampled,nonzero,readable_targets,distinct_targets,plausible_vtables,modal_vtable,matching_vtables\n";
+    aoe2hd::ObjectFieldSampler fieldSampler;
+    std::ofstream fields("aoe2hd_object_fields.csv",std::ios::trunc);
+    if(!fields){std::cerr<<"Cannot create object field CSV\n";return 2;}
+    fields<<"elapsed_ms,world,player,offset,index,object,field_offset,kind,before,after\n";
     uint64_t lastEvidence=0;
     uint64_t lastSummary=0;
     while(!stopped) {
@@ -45,12 +50,12 @@ int main(int argc,char** argv) {
         const auto ms=static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now()-start).count());
         if(!player) {
-            last.clear();tracker.reset();lastWorld=lastPlayer=0;
+            last.clear();tracker.reset();fieldSampler.reset();lastWorld=lastPlayer=0;
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
             continue;
         }
         if(world.snapshot.world!=lastWorld || player->object!=lastPlayer) {
-            last.clear();tracker.reset();lastWorld=world.snapshot.world;lastPlayer=player->object;
+            last.clear();tracker.reset();fieldSampler.reset();lastWorld=world.snapshot.world;lastPlayer=player->object;
         }
         auto report=aoe2hd::DiagnoseUnitVectors(memory,world);
         if(lastEvidence==0 || ms-lastEvidence>=5000) {
@@ -66,6 +71,12 @@ int main(int argc,char** argv) {
             }
             evidence.flush();
         }
+        auto fieldChanges=fieldSampler.observe(memory,report.candidates);
+        for(const auto& d:fieldChanges)
+            fields<<ms<<','<<world.snapshot.world<<','<<player->object<<','
+                  <<d.offset<<','<<d.index<<','<<d.object<<','<<d.field<<','
+                  <<d.kind<<','<<d.before<<','<<d.after<<'\n';
+        if(!fieldChanges.empty())fields.flush();
         auto differences=tracker.observe(memory,report.candidates);
         for(const auto& d:differences) {
             diff<<ms<<','<<world.snapshot.world<<','<<player->object<<','
