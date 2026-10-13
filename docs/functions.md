@@ -674,3 +674,39 @@ Players:
 Para os três, `player+0x04 = 0x18E14488`, confirmando back-pointer para o mesmo `World`. Os valores `player+0x08` foram `2`, `1` e `3`, respectivamente.
 
 Esse snapshot fecha a validação semântica em estado gameplay-ready; resta localizar a instrução exata que aumenta `World+0x188` durante a criação da partida.
+
+## Observações dinâmicas complementares — 2026-10-12
+
+Base do módulo nesta sessão: `0x003B0000` (base estática `0x00400000`; runtime = base do módulo + endereço estático - base estática).
+
+### Publicação de World
+
+`FUN_0062E5D0`, runtime `0x005DE5D0`: em `0x005DE68B`, `mov [eax],ecx` gravou `World*=0x0F5428D0` em `Owner+0xC8=0x049EA020`. Nesse instante o vetor ainda podia estar nulo.
+
+### Resize de mPlayers
+
+`FUN_007288B0`, runtime `0x006D88B0`, observada com `EDI=&World.mPlayers=0x0F542A54`, `ESI=0x17E24EE8` e `EBX=3`:
+```asm
+006D8A0C  mov [edi],esi
+006D8A0E  lea eax,[esi+ebx*8]
+006D8A11  mov [edi+4],eax
+006D8A14  mov eax,[ebp-24]
+006D8A17  add eax,esi
+006D8A19  mov [edi+8],eax
+```
+Resultou em `begin=0x17E24EE8`, `end=capacityEnd=0x17E24F00`. Os primeiros 24 bytes do buffer estavam **zerados** após a alocação; resize não é sinônimo de criação de `WorldPlayer`.
+
+### Publicação de um PlayerEntry (Gaia)
+
+Um breakpoint hardware write DWORD em `0x17E24EE8` capturou `entry[0].object=0x13A78734` com `entry[0].controlBlock=0`, `EBX=0x17E24EE8` e `EDX=0x13A78728`. O disassembly seguinte:
+```asm
+00648F69  mov ecx,[ebx+4]  ; bloco anterior (nulo na amostra)
+00648F6C  mov [ebp-20],eax
+00648F6F  mov [ebp-18],ecx
+00648F72  mov [ebp-1C],ecx
+00648F75  mov [ebx+4],edx  ; publica novo controlBlock
+00648F7C  test ecx,ecx     ; se anterior não nulo, segue release
+```
+Após `0x00648F75`, a memória mostrou `{object=0x13A78734,controlBlock=0x13A78728}`. O endereço da instrução **exata** que escreveu `object` ainda requer o disassembly imediatamente anterior a `0x00648F69`.
+
+As entradas 1 e 2 estavam depois completas e foram validadas como HumanOrCoop e Computer. Os hardware breakpoints de escrita nessas posições não dispararam; a razão ainda é desconhecida. Os valores observados coincidiam com gameplay interativo, mas a fronteira temporal entre prontidão estrutural e operacional **não foi medida**.
