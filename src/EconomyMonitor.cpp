@@ -55,6 +55,7 @@ std::vector<EconomyEvent> EconomyMonitor::observe(uint64_t generation, uint32_t 
             events.push_back(e);
         }
         active_ = false;
+        populationActive_ = false;
         failure_ = reason;
         return events;
     }
@@ -64,6 +65,7 @@ std::vector<EconomyEvent> EconomyMonitor::observe(uint64_t generation, uint32_t 
     const bool newSession = !active_ || generation != generation_ || world != world_ ||
         snap.localPlayer != player_ || snap.tableAddress != table_;
     if (newSession) {
+        populationActive_ = false;
         ++session_;
         std::ostringstream s;
         s << "ResourcesReady World=0x" << std::hex << world
@@ -112,4 +114,54 @@ std::vector<EconomyEvent> EconomyMonitor::observe(uint64_t generation, uint32_t 
     previous_ = now;
     return events;
 }
+std::vector<EconomyEvent> EconomyMonitor::observePopulation(const PopulationResult& population) {
+    std::vector<EconomyEvent> events;
+    if (!active_) return events;
+    if (!population.ready()) {
+        const std::string reason = PopulationStatusName(population.status);
+        if (populationActive_ || reason != populationFailure_) {
+            EconomyEvent e;
+            e.type = "population_unavailable";
+            e.session = session_;
+            e.world = world_;
+            e.player = player_;
+            e.table = table_;
+            e.text = "PopulationUnavailable: " + reason;
+            events.push_back(e);
+        }
+        populationActive_ = false;
+        populationFailure_ = reason;
+        return events;
+    }
+    populationFailure_.clear();
+    const auto& p = population.snapshot;
+    const std::array<uint32_t,4> current{{p.used,p.freeSlots,p.limit,p.villagers}};
+    const std::array<const char*,4> names{{"PopulationUsed","FreePopulationSlots","PopulationLimit","VillagerCount"}};
+    for (size_t i = 0; i < current.size(); ++i) {
+        if (populationActive_ && previousPopulation_[i] == current[i]) continue;
+        EconomyEvent e;
+        e.session = session_;
+        e.world = world_;
+        e.player = player_;
+        e.table = table_;
+        e.resource = names[i];
+        e.type = populationActive_ ? "change" : "initial";
+        e.hasValues = true;
+        e.current = static_cast<float>(current[i]);
+        if (populationActive_) {
+            e.previous = static_cast<float>(previousPopulation_[i]);
+            e.delta = e.current - e.previous;
+            e.text = e.resource + ": " + std::to_string(previousPopulation_[i]) +
+                " -> " + std::to_string(current[i]) +
+                " (" + (e.delta >= 0 ? "+" : "") + std::to_string(static_cast<int>(e.delta)) + ")";
+        } else {
+            e.text = "Initial " + e.resource + "=" + std::to_string(current[i]);
+        }
+        events.push_back(e);
+    }
+    previousPopulation_ = current;
+    populationActive_ = true;
+    return events;
+}
+
 }
