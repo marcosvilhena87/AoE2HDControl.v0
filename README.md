@@ -523,3 +523,16 @@ Import-Csv .\aoe2hd_entity_type_comparison.csv | Where-Object differentiates -eq
 ```
 
 Output files: `aoe2hd_entity_type_fields.csv` (one row per object and offset) and `aoe2hd_entity_type_comparison.csv` (readable/distinct-value statistics). Labels are entered by the operator; **the program does not yet identify types automatically**. Differences may reflect HP, identity, pointers or mutable state. Repeating with multiple examples of the same type and in fresh games is required to isolate candidate type-identification fields. The example absolute addresses are from an earlier game and may no longer be valid. The probe is read-only and does not attach a debugger.
+
+
+### EntityIdentityReader v1 (experimental)
+
+\`aoe2hd_entity_identity.exe\` reads four raw candidate identity fields from the 32-bit entity object: signature \`+0x00\`, per-entity ID candidate \`+0x08\`, type-reference candidate \`+0x0C\`, and owner-reference candidate \`+0x10\`. It captures all four in a single 20-byte read and exports an explicit \`readable\` flag. Owner comparison is only pointer equality, **not verified player ownership**.
+
+\`\`\`powershell
+.\build2026\Release\aoe2hd_entity_identity.exe --entity villager_a 0x14878B70 --entity villager_b 0x14879E80 --entity scout_ally 0x1487A9F0 --entity scout_enemy 0x148781E8 --csv aoe2hd_entity_identity.csv
+\`\`\`
+
+The example addresses were observed in a prior match and are not stable across sessions. Discover fresh addresses using \`aoe2hd_selected_entity.exe\` first; never presume prior raw object addresses are valid. This is a read-only diagnostic tool, not automatic entity enumeration or confirmed type/owner identification.
+
+**Local integration note:** The SelectedEntityReader was previously distributed as local-only files, not yet in GitHub main. Preserve its files and ensure \`src/SelectedEntityReader.cpp\` remains in the \`aoe2hd_world\` sources alongside \`src/EntityIdentityReader.cpp\` when merging locally.
