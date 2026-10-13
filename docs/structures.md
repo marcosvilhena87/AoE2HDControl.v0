@@ -463,3 +463,26 @@ bool IsWorldReady(World* w)
 ~~~
 
 Ainda falta fechar **quando** os slots passam a conter `WorldPlayer*` válidos. Os três call sites conhecidos de `FUN_007288B0` não dispararam na transição testada; o próximo experimento é observar por hardware write `World+0x188` em uma nova criação de partida.
+
+## Snapshot validado — criação de mPlayers em 2026-10-12
+
+Build: `AoK HD.exe 5.8.INT`, x86, `moduleBase=0x003B0000`. Endereços abaixo são da sessão; use RVA/offset ao implementar.
+
+```text
+World*               = 0x0F5428D0
+World+0x174          = 0x00000001 (mLocalPlayerIndex)
+World+0x184 begin    = 0x17E24EE8
+World+0x188 end      = 0x17E24F00
+World+0x18C cap      = 0x17E24F00
+size = capacity = 3
+```
+
+| índice | object | controlBlock | vtable | back-pointer +0x04 | campo +0x08 | classe |
+|---:|---|---|---|---|---:|---|
+| 0 | `0x13A78734` | `0x13A78728` | `0x0098C8A0` | `0x0F5428D0` | 2 | Gaia |
+| 1 | `0x1B11A85C` | `0x1B11A850` | `0x0098CAE4` | `0x0F5428D0` | 1 | HumanOrCoop |
+| 2 | `0x17F11854` | `0x17F11848` | `0x0098C618` | `0x0F5428D0` | 3 | Computer |
+
+A passagem de `mPlayers` para size 3 ocorreu inicialmente com os três `PlayerEntry` completamente nulos. Em seguida `entry[0].object` passou a ser não nulo **antes** de `entry[0].controlBlock`: há um estado transitório de par incompleto. A escrita do `controlBlock` foi identificada em `0x00648F75`. Portanto, a validação deve rejeitar pares incompletos e não confiar apenas em `size > 0`.
+
+Na amostra, os campos `+0x08` identificam os tipos observados (2/1/3), **não** o número/cor do lobby. `mLocalPlayerIndex=1` aponta ao objeto `HumanOrCoop`. A partida já apresentava mapa, seleção de unidades e comandos operantes no snapshot final, mas a primeira transição para prontidão operacional não foi capturada.
