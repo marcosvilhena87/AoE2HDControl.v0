@@ -61,7 +61,7 @@ int main(int argc,char** argv) {
     std::ofstream absolute("aoe2hd_absolute_progress.csv",std::ios::trunc);
     if(!absolute){std::cerr<<"Cannot create absolute progress CSV\n";return 2;}
     absolute<<"elapsed_ms,phase,world,player,population_used,villagers,address,readable16,value16,readable32,value32,kind\n";
-    if(watched.empty())std::cout<<"No --watch addresses; absolute progress CSV will contain only header.\\n";
+    if(watched.empty())std::cout<<"No --watch addresses; absolute progress CSV will contain only header.\n";
     aoe2hd::AbsoluteProgressMonitor absoluteMonitor;
     std::signal(SIGINT,stop);
     std::cout<<"Read-only production progress probe; CSV="<<csvPath
