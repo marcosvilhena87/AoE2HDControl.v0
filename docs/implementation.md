@@ -5,7 +5,7 @@ This is an **experimental** C++17 proof-of-concept for AoK HD.exe 5.8.INT (32-bi
 ## Build (Windows, Visual Studio / CMake)
 
 ```powershell
-cd C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_II_HD\AoE2HDControl
 git pull origin main
 cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
 cmake --build build2026 --config Release
@@ -60,7 +60,7 @@ ResourceTable + 0x0C = Gold  (float32)
 O `aoe2hd_probe.exe` passa a exibir os quatro recursos e o endereco da tabela, obtidos apenas por `ReadProcessMemory`. Os valores sao floats brutos; o HUD pode exibir apenas sua parte inteira. A leitura valida o ponteiro, campos finitos nao negativos e relê os campos de referencia do jogador e da tabela para detectar parte das transicoes. **Nao e uma fotografia atomica do jogo**. Os offsets sao especificos da versao investigada; validar em outras partidas e configuracoes.
 
 ```powershell
-cd C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_II_HD\AoE2HDControl
 git pull origin main
 cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
 cmake --build build2026 --config Release
@@ -72,14 +72,14 @@ ctest --test-dir build2026 -C Release --output-on-failure
 
 ### Pasta de trabalho no Windows
 
-A pasta preferida para clonar, atualizar, compilar e executar o projeto é `C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl` (sem o sufixo `Atualizado`). Se a pasta já possuir `.git`, use `git pull origin main`. Se o Git responder `not a git repository`, a pasta não é um clone válido: preserve quaisquer arquivos locais e utilize um clone Git antes de tentar atualizar. Após mover ou renomear uma árvore já compilada, remova somente o diretório gerado `build2026` e reconfigure o CMake para evitar caminhos antigos em `CMakeCache.txt`.
+A pasta padrão para clonar, atualizar, compilar e executar o projeto é `C:\Minha_Pasta\Jogos\Age_of_Empires_II_HD\AoE2HDControl`. Se a pasta já possuir `.git`, use `git pull origin main`. Se o Git responder `not a git repository`, a pasta não é um clone válido: preserve quaisquer arquivos locais e utilize um clone Git antes de tentar atualizar. Após mover ou renomear uma árvore já compilada, remova somente o diretório gerado `build2026` e reconfigure o CMake para evitar caminhos antigos em `CMakeCache.txt`.
 
 ## Monitor econômico contínuo
 
 O programa `aoe2hd_economy_monitor.exe` usa `ReadWorld` e `ReadLocalResources` em consultas periódicas, identifica mudanças no World, jogador local e endereço da tabela e registra apenas alterações observadas de recursos. Se houver perda de leitura ou mudança de partida, emite `Unavailable` e reinicializa sua linha de base. O processo é aberto novamente após fechamento/reinício. Não confundir variações observadas com estatísticas totais de coleta/gasto (mudanças intermediárias podem ser perdidas entre amostras).
 
 ```powershell
-cd C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_II_HD\AoE2HDControl
 git pull origin main
 cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
 cmake --build build2026 --config Release
@@ -95,7 +95,7 @@ Aceita `--interval-ms` de 50 a 60000, padrão 250. Interrompa com Ctrl+C. A saí
 O `aoe2hd_economy_monitor.exe` agora salva eventos em `aoe2hd_economy.csv` na pasta corrente, enquanto mantém as mensagens no terminal. A opção `--csv` permite escolher outro arquivo. O arquivo é **sobrescrito a cada execução** (use outro nome para preservar sessões anteriores), com cabeçalho e colunas `elapsed_ms,session,event,world,local_player,resource_table,resource,previous,current,delta,details`. Os endereços são expressos como inteiros decimais no CSV; `initial` tem quatro linhas, uma por recurso, com `previous` e `delta` vazios; `change` tem valores anteriores, atuais e delta; `unavailable` descreve a perda de leitura. `session` aumenta quando o World, jogador, tabela ou geração do processo mudam, e também após indisponibilidade. Essas sessões são identificadores **dentro da execução atual**, não entre arquivos de execuções diferentes. Exemplo:
 
 ```powershell
-cd C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_II_HD\AoE2HDControl
 git pull origin main
 cmake --build build2026 --config Release
 ctest --test-dir build2026 -C Release --output-on-failure
@@ -110,7 +110,7 @@ A observação por polling (250 ms) não distingue automaticamente coleta de out
 O analisador `scripts/analyze_economy.py` sumariza por `run_id`, `session` e recurso; `--output aoe2hd_summary.csv` exporta um CSV com saldos, aumentos/reduções observados, duração e variação líquida por minuto. O monitor agora inclui `run_id` gerado a partir do horário epoch em microssegundos na inicialização, diferenciando execuções; mantém o número de sessão por partida observada. CSVs antigos são lidos com `run_id=legacy`. Para eventos `initial`, `previous` e `delta` ficam vazios. Aumentos/reduções observados representam mudanças de **saldo**, não coleta/gasto bruto.
 
 ```powershell
-cd C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_II_HD\AoE2HDControl
 git pull origin main
 cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
 cmake --build build2026 --config Release
