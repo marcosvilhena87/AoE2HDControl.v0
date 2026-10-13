@@ -282,3 +282,33 @@ Capturar por hardware write o `World+0x188` da instância recém-criada em uma n
 - `docs/structures.md`
 - `docs/roadmap.md`
 - `docs/aoe2control-reference.md` — referência conceitual do AoE2Control/DE, sem transplante de offsets
+
+## Captura temporal de mPlayers — 2026-10-12 (x32dbg)
+
+Em **AoK HD.exe 5.8.INT x86**, com `moduleBase=0x003B0000`, foi acompanhada uma nova instância desde a publicação de `World*` até a validação dos jogadores em uma partida jogável. Endereços abaixo são **runtime da amostra**, não offsets portáveis.
+
+- `OwnerGlobal=0x00AA2C58`; `Owner*=0x049E9F58`; `Owner+0xC8=0x049EA020`.
+- Em `0x005DE68B` (`mov [eax],ecx`), foi publicado `World*=0x0F5428D0`.
+- `World+0x174=0x0F542A44` continha `mLocalPlayerIndex=1`.
+- `World+0x184=0x0F542A54`: `begin=0x17E24EE8`, `end=capacityEnd=0x17E24F00`; tamanho e capacidade = 3.
+
+A rotina `FUN_007288B0` (runtime `0x006D88B0`) instalou os limites do vetor:
+```asm
+006D8A0C  mov [edi],esi           ; begin
+006D8A0E  lea eax,[esi+ebx*8]   ; end = begin + 3*8
+006D8A11  mov [edi+4],eax        ; end
+006D8A19  mov [edi+8],eax        ; capacityEnd
+```
+**Importante:** logo após o resize, as **três entradas existiam, mas seus 24 bytes estavam zerados**. Assim, `size=3` não implica objetos criados. O primeiro `object` foi observado sendo gravado em `0x17E24EE8` (`0x13A78734`), enquanto `controlBlock` ainda era zero. Depois, `0x00648F75: mov [ebx+4],edx` publicou `controlBlock=0x13A78728`, completando o par.
+
+Snapshot final validado por vtable, back-pointer e campo `+0x08`:
+
+| Índice | Classe | object | controlBlock | vtable runtime | +0x08 |
+|---:|---|---|---|---|---:|
+| 0 | Gaia | `0x13A78734` | `0x13A78728` | `0x0098C8A0` | 2 |
+| 1 | HumanOrCoop | `0x1B11A85C` | `0x1B11A850` | `0x0098CAE4` | 1 |
+| 2 | Computer | `0x17F11854` | `0x17F11848` | `0x0098C618` | 3 |
+
+Os três objetos apontavam em `+0x04` para `World*=0x0F5428D0`; todos obedeciam a `object=controlBlock+0x0C`. O índice local **1** selecionava HumanOrCoop. O usuário confirmou **mapa jogável, unidades selecionáveis e comandos disponíveis** nesse estado.
+
+**Limite da evidência:** os breakpoints de escrita nas entradas 1 e 2 não dispararam apesar de seus campos aparecerem preenchidos posteriormente, sem realocação do buffer. Isso não estabelece a ordem nem o instante exato da publicação dessas entradas; a causa da ausência de disparo permanece indeterminada. A coincidência de prontidão estrutural com gameplay jogável foi observada nesse snapshot, **não** a primeira transição para gameplay-ready. Próximas prioridades: `IsWorldStructurallyReady()` com leituras seguras, instrumentar primeira transição e então implementar leitura de recursos.
