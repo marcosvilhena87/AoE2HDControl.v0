@@ -135,3 +135,19 @@ cmake --build build2026 --config Release
 ctest --test-dir build2026 -C Release --output-on-failure
 .\build2026\Release\aoe2hd_probe.exe
 ```
+
+
+## População no monitor contínuo e CSV (2026-10-13)
+
+O `aoe2hd_economy_monitor.exe` agora também consulta o `PopulationReader` no mesmo ciclo de amostragem. Além dos recursos, registra no **mesmo CSV** os indicadores `PopulationUsed`, `FreePopulationSlots`, `PopulationLimit` e `VillagerCount` nas linhas `initial` e `change`, sem mudar as colunas existentes. Falhas temporárias de leitura de população são indicadas por `population_unavailable` e não interrompem a coleta dos recursos. A primeira leitura válida depois de indisponibilidade registra novos valores iniciais, não uma diferença através da falha. As sessões continuam separadas quando muda `World`, jogador, tabela ou processo. O analisador `scripts/analyze_economy.py` mantém compatibilidade: resume somente `Food/Wood/Stone/Gold` e ignora os indicadores populacionais.
+
+```powershell
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_II_HD\AoE2HDControl
+git pull --ff-only origin main
+cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
+cmake --build build2026 --config Release
+ctest --test-dir build2026 -C Release --output-on-failure
+.\build2026\Release\aoe2hd_economy_monitor.exe --interval-ms 250 --csv aoe2hd_population_economy.csv
+```
+
+A semântica da contagem de aldeões e dos dois contadores populacionais ainda requer verificação em outra partida e com unidades militares. A captura é de leitura não atômica, portanto pode retornar `PopulationUnavailable` temporariamente.
