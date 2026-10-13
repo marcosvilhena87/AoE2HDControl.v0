@@ -1,4 +1,5 @@
 #include "EntityHealthMonitor.h"
+#include "SelectionPointerMonitor.h"
 #include "ConstructionPointerDiscovery.h"
 #include "ProcessMemory.h"
 #include <cerrno>
@@ -33,6 +34,7 @@ int main(int argc,char** argv){
  std::vector<uint32_t> bases;std::set<uint32_t> seen;
  std::string csvPath="aoe2hd_entity_health.csv",phasePath="entity_health_phase.txt";
  bool discoverPointers=false;
+ bool watchSelection=false;
  for(int i=1;i<argc;++i){
   const std::string arg=argv[i];
   if((arg=="--base"||arg=="--hp-address")&&i+1<argc){
@@ -47,17 +49,25 @@ int main(int argc,char** argv){
    }
    if(seen.insert(base).second)bases.push_back(base);
   }else if(arg=="--discover-pointers")discoverPointers=true;
+  else if(arg=="--watch-selection")watchSelection=true;
   else if(arg=="--csv"&&i+1<argc)csvPath=argv[++i];
   else if(arg=="--phase-file"&&i+1<argc)phasePath=argv[++i];
-  else{std::cerr<<"Usage: aoe2hd_entity_health (--base 0xADDRESS | --hp-address 0xADDRESS) ... [--csv file] [--phase-file file] [--discover-pointers]\n";return 2;}
+  else{std::cerr<<"Usage: aoe2hd_entity_health (--base 0xADDRESS | --hp-address 0xADDRESS) ... [--csv file] [--phase-file file] [--discover-pointers] [--watch-selection]\n";return 2;}
  }
- if(bases.empty()){std::cerr<<"Provide at least one --base or --hp-address\n";return 2;}
+ if(bases.empty()&&!watchSelection){std::cerr<<"Provide at least one --base or --hp-address\n";return 2;}
  aoe2hd::ProcessMemory memory;
  if(!memory.open()){std::cerr<<"AoK HD.exe not found\n";return 2;}
  std::ofstream csv(csvPath,std::ios::trunc);
  if(!csv){std::cerr<<"Cannot open health CSV\n";return 2;}
  csv<<"elapsed_ms,phase,world,player,base,hp_address,field_offset,readable,hp_float,raw_u32,plausible,kind\n";
  csv.flush();
+ std::ofstream selectionCsv;
+ if(watchSelection){
+  selectionCsv.open("aoe2hd_selection_pointers.csv",std::ios::trunc);
+  if(!selectionCsv){std::cerr<<"Cannot open selection CSV\n";return 2;}
+  selectionCsv<<"elapsed_ms,phase,world,player,offset,pointer_readable,pointer,hp_address,hp_readable,hp_float,raw_hp,hp_plausible,kind\n";
+ }
+ aoe2hd::SelectionPointerMonitor selectionMonitor;
  std::ofstream pointerCsv;
  if(discoverPointers){
   pointerCsv.open("aoe2hd_entity_pointer_hits.csv",std::ios::trunc);
@@ -77,11 +87,11 @@ int main(int argc,char** argv){
   const auto ms=std::chrono::duration_cast<std::chrono::milliseconds>(
      std::chrono::steady_clock::now()-start).count();
   if(!player){
-   monitor.reset();lastWorld=lastPlayer=0;
+   monitor.reset();selectionMonitor.reset();lastWorld=lastPlayer=0;
    std::this_thread::sleep_for(std::chrono::milliseconds(250));continue;
   }
   if(world.snapshot.world!=lastWorld||player->object!=lastPlayer){
-   monitor.reset();lastWorld=world.snapshot.world;lastPlayer=player->object;
+   monitor.reset();selectionMonitor.reset();lastWorld=world.snapshot.world;lastPlayer=player->object;
   }
   const auto phase=readPhase(phasePath);
   const bool phaseChanged=phase!=lastPhase;
@@ -99,6 +109,19 @@ int main(int argc,char** argv){
     }
    }
    pointerCsv.flush();
+  }
+  if(watchSelection){
+   const auto pointers=selectionMonitor.observe(memory,player->object,phaseChanged);
+   for(const auto& e:pointers){
+    selectionCsv<<ms<<','<<phase<<','<<world.snapshot.world<<','<<player->object
+      <<','<<e.offset<<','<<e.pointerReadable<<','<<e.pointer
+      <<','<<e.hpAddress<<','<<e.hpReadable<<','<<e.hp
+      <<','<<e.rawHp<<','<<e.hpPlausible<<','<<e.kind<<'\n';
+    if(e.kind=="pointer_change"||e.kind=="pointer_clear")
+     std::cout<<"["<<ms<<" ms] LocalPlayer+0x"<<std::hex<<e.offset
+       <<" -> 0x"<<e.pointer<<std::dec<<" ("<<e.kind<<")\n";
+   }
+   if(!pointers.empty())selectionCsv.flush();
   }
   auto events=monitor.observe(memory,bases,phaseChanged);
   for(const auto& event:events){
