@@ -457,3 +457,14 @@ Set-Content .\construction_phase.txt "idle"
 Repeat `--base 0x...` to compare two structures. The CSV logs elapsed time, phase, world/player identity, base, field offset, absolute field address, read success, float32 value, raw u32 bits, whether it lies in [0,100], and the event kind (`initial`, `change`, `status`, `phase`). Samples run every ~250 ms; changes are logged as they occur. Mark experimental phases by rewriting `construction_phase.txt` to `building`, `paused`, `resumed`, `complete`. The process uses only `ReadProcessMemory`; no breakpoints or writes are involved.
 
 **Important**: the base `0x07E99D78` was observed in one game session and must be revalidated after restart. The relative field `+0xC1C` is still a hypothesis about construction-state ownership: it could represent a UI object. No automatic building enumeration is claimed. See CTest `construction_progress_monitor_tests`.
+
+
+### Experimental construction pointer discovery
+
+Run the known base probe with `--discover-pointers`:
+
+```powershell
+.\build2026\Release\aoe2hd_construction_progress.exe --base 0x145AD1F0 --discover-pointers --csv aoe2hd_construction_progress_v3.csv --phase-file construction_phase.txt
+```
+
+This creates `aoe2hd_construction_pointer_hits.csv` when direct or one-hop references to the supplied base are found in the first 0x400 bytes of the validated World or LocalPlayer objects. The search runs at about 5-second intervals, scans no more than 64 aligned intermediary candidates, and never changes the game process. An **empty CSV (apart from its header) means no reference was detected within this deliberately limited search**, not that there is no stable path. This is *candidate path discovery*, **not automatic building object discovery or a validated stable pointer chain**. Check candidate root offsets across fresh matches and separate sessions before trusting them. In particular, `EDI` may be a reused UI object rather than an actual building.
