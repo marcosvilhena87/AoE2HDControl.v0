@@ -443,3 +443,17 @@ Suggested experiment: start with a stable town center; write `idle` in the phase
 ### Configurable absolute progress address (2026-10-13)
 
 Use `aoe2hd_production_progress.exe --watch 0x07E9A9BC --csv aoe2hd_production_progress_v3.csv --phase-file production_phase.txt`. Repeat `--watch` to monitor several distinct 32-bit addresses; duplicates are ignored, and invalid/out-of-range addresses cause a usage error. Only explicitly provided addresses are read. The old addresses from previous sessions are **no longer hardcoded**. With no `--watch`, the absolute-progress CSV has only a header, while the existing structural scanner continues normally. Results are logged to `aoe2hd_absolute_progress.csv` with 16-bit and 32-bit interpretations, including read failures. These are volatile absolute addresses, **not** stable offsets; revalidate them after restarting the game. Never use breakpoints or write memory for this probe.
+
+
+### Construction progress probe (experimental)
+
+The standalone `aoe2hd_construction_progress.exe` monitors the observed Cheat Engine construction percentage field at **object base + 0xC1C**, interpreted as IEEE-754 `float32`. Example:
+
+```powershell
+Set-Content .\construction_phase.txt "idle"
+.\build2026\Release\aoe2hd_construction_progress.exe --base 0x07E99D78 --csv aoe2hd_construction_progress.csv --phase-file construction_phase.txt
+```
+
+Repeat `--base 0x...` to compare two structures. The CSV logs elapsed time, phase, world/player identity, base, field offset, absolute field address, read success, float32 value, raw u32 bits, whether it lies in [0,100], and the event kind (`initial`, `change`, `status`, `phase`). Samples run every ~250 ms; changes are logged as they occur. Mark experimental phases by rewriting `construction_phase.txt` to `building`, `paused`, `resumed`, `complete`. The process uses only `ReadProcessMemory`; no breakpoints or writes are involved.
+
+**Important**: the base `0x07E99D78` was observed in one game session and must be revalidated after restart. The relative field `+0xC1C` is still a hypothesis about construction-state ownership: it could represent a UI object. No automatic building enumeration is claimed. See CTest `construction_progress_monitor_tests`.
