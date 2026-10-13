@@ -1,4 +1,5 @@
 #include "EconomyMonitor.h"
+#include "DerivedEventDetector.h"
 #include "PopulationReader.h"
 #include "GameplayReadinessMonitor.h"
 #include "ProcessMemory.h"
@@ -52,6 +53,7 @@ int main(int argc, char** argv) {
     if (!csv) return 2;
     std::signal(SIGINT, onSignal);
     aoe2hd::EconomyMonitor monitor;
+    aoe2hd::DerivedEventDetector derivedDetector;
     aoe2hd::GameplayReadinessMonitor readiness;
     bool waitingReported = false;
     std::cout << "Read-only economy monitoring, interval=" << intervalMs
@@ -103,6 +105,8 @@ int main(int argc, char** argv) {
         events.insert(events.end(), populationEvents.begin(), populationEvents.end());
         const auto elapsed = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - started).count());
+        auto derived = derivedDetector.observe(elapsed, events);
+        events.insert(events.end(), derived.begin(), derived.end());
         for (const auto& event : events) {
             // Initial rows for all four resources, one concise line on screen.
             if (event.type != "initial" || event.resource == "Food" || event.resource == "PopulationUsed")
