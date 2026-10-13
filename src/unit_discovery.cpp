@@ -23,7 +23,7 @@ int main(int argc,char** argv) {
     if(!csv){std::cerr<<"Cannot create CSV\n";return 2;}
     csv<<"elapsed_ms,world,player,source,offset,stride,count,begin,end,capacity_end,readable_sample,reason,scanned_slots,read_failures,nonvector,empty,invalid_bounds,oversized,misaligned,unreadable\n";
     csv.flush();
-    std::cout<<"Read-only discovery v2; CSV="<<output<<". Ctrl+C to stop.\n";
+    std::cout<<"Read-only discovery v6; CSV="<<output<<". Ctrl+C to stop.\n";
     aoe2hd::ProcessMemory memory;
     if(!memory.open()){std::cerr<<"AoK HD.exe not found\n";return 2;}
     std::signal(SIGINT,stop);
@@ -42,6 +42,10 @@ int main(int argc,char** argv) {
     std::ofstream fields("aoe2hd_object_fields.csv",std::ios::trunc);
     if(!fields){std::cerr<<"Cannot create object field CSV\n";return 2;}
     fields<<"elapsed_ms,world,player,offset,index,object,field_offset,kind,before,after\n";
+    std::ofstream coverage("aoe2hd_object_field_summary.csv",std::ios::trunc);
+    if(!coverage){std::cerr<<"Cannot create summary CSV\n";return 2;}
+    coverage<<"elapsed_ms,world,player,offset,objects,fields,changes,read_failures\n";
+    uint64_t lastCoverage=0;
     uint64_t lastEvidence=0;
     uint64_t lastSummary=0;
     while(!stopped) {
@@ -77,6 +81,14 @@ int main(int argc,char** argv) {
                   <<d.offset<<','<<d.index<<','<<d.object<<','<<d.field<<','
                   <<d.kind<<','<<d.before<<','<<d.after<<'\n';
         if(!fieldChanges.empty())fields.flush();
+        if(lastCoverage==0 || ms-lastCoverage>=5000) {
+            lastCoverage=ms?ms:1;
+            for(const auto& s:fieldSampler.summaries())
+                coverage<<ms<<','<<world.snapshot.world<<','<<player->object<<','
+                    <<s.offset<<','<<s.objects<<','<<s.fields<<','
+                    <<s.changes<<','<<s.readFailures<<'\n';
+            coverage.flush();
+        }
         auto differences=tracker.observe(memory,report.candidates);
         for(const auto& d:differences) {
             diff<<ms<<','<<world.snapshot.world<<','<<player->object<<','
