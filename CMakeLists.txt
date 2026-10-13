@@ -39,6 +39,6 @@ endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(BUILD_TESTING AND Python3_Interpreter_FOUND)
-  add_test(NAME economy_analyzer_tests COMMAND ${Python3_EXECUTABLE} scripts/test_analyze_economy.py)
+  add_test(NAME economy_analyzer_tests COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_analyze_economy.py)
   set_tests_properties(economy_analyzer_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 endif()
