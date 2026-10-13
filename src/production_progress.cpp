@@ -4,6 +4,10 @@
 #include "PopulationReader.h"
 #include "AbsoluteProgressMonitor.h"
 #include <chrono>
+#include <cerrno>
+#include <cstdlib>
+#include <limits>
+#include <set>
 #include <csignal>
 #include <fstream>
 #include <iostream>
@@ -24,12 +28,16 @@ std::string readPhase(const std::string& path) {
 int main(int argc,char** argv) {
     std::string csvPath="aoe2hd_production_progress.csv";
     std::string phasePath="production_phase.txt";
+    std::vector<uint32_t> watched;
+    std::set<uint32_t> deduplicated;
     for(int i=1;i<argc;++i) {
         const std::string arg=argv[i];
         if(arg=="--csv" && i+1<argc)csvPath=argv[++i];
         else if(arg=="--phase-file" && i+1<argc)phasePath=argv[++i];
         else {std::cerr<<"Usage: aoe2hd_production_progress [--csv path] [--phase-file path]\n";return 2;}
     }
+    // Legacy addresses are session-specific: never monitor them by default.
+    // An explicitly supplied --watch replaces the previous hardcoded list.
     std::ofstream csv(csvPath,std::ios::trunc);
     if(!csv){std::cerr<<"Cannot create CSV\n";return 2;}
     csv<<"elapsed_ms,phase,world,player,population_used,villagers,source,vector_offset,index,object,field_offset,encoding,raw,value,kind\n";
@@ -39,7 +47,7 @@ int main(int argc,char** argv) {
     std::ofstream absolute("aoe2hd_absolute_progress.csv",std::ios::trunc);
     if(!absolute){std::cerr<<"Cannot create absolute progress CSV\n";return 2;}
     absolute<<"elapsed_ms,phase,world,player,population_used,villagers,address,readable16,value16,readable32,value32,kind\n";
-    const std::vector<uint32_t> watched{0x142E8E54u,0x005AD5ECu,0x005AFC30u};
+    if(watched.empty())std::cout<<"No --watch addresses; absolute progress CSV will contain only header.\\n";
     aoe2hd::AbsoluteProgressMonitor absoluteMonitor;
     std::signal(SIGINT,stop);
     std::cout<<"Read-only production progress probe; CSV="<<csvPath
