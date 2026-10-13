@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.16)
+project(AoE2HDControl LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_library(aoe2hd_world src/WorldReader.cpp)
+target_include_directories(aoe2hd_world PUBLIC include)
+
+if(WIN32)
+  add_executable(aoe2hd_probe src/main.cpp src/ProcessMemory.cpp)
+  target_link_libraries(aoe2hd_probe PRIVATE aoe2hd_world)
+  if(MSVC)
+    target_compile_options(aoe2hd_probe PRIVATE /W4)
+    target_compile_options(aoe2hd_world PRIVATE /W4)
+  endif()
+endif()
+
+include(CTest)
+if(BUILD_TESTING)
+  add_executable(world_reader_tests tests/WorldReaderTests.cpp)
+  target_link_libraries(world_reader_tests PRIVATE aoe2hd_world)
+  add_test(NAME world_reader_tests COMMAND world_reader_tests)
+endif()
