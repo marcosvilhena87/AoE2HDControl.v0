@@ -45,6 +45,16 @@ SelectedTelemetry ReadSelectedTelemetry(const MemoryReader& memory,const WorldRe
    s.typeCandidateA=candidateA;s.typeCandidateB=candidateB;
   }
  }
+ // Revalidate selection after the optional definition reads as well.
+ uint32_t finalA=0,finalB=0;
+ if(!memory.read(player->object+0x15c,&finalA,4)||
+    !memory.read(player->object+0x160,&finalB,4)||
+    finalA!=s.slot15c||finalB!=s.slot160){
+  s.typeCandidatesReadable=false;
+  s.typeReferenceStable=false;
+  s.typeCandidateA=0;s.typeCandidateB=0;
+  s.status=TelemetryStatus::ChangedDuringRead;return s;
+ }
  s.ownership=ClassifyEntityOwnership(s.identity,world);
  s.status=TelemetryStatus::Ready;
  return s;
