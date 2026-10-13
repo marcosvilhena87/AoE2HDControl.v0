@@ -468,3 +468,17 @@ Run the known base probe with `--discover-pointers`:
 ```
 
 This creates `aoe2hd_construction_pointer_hits.csv` when direct or one-hop references to the supplied base are found in the first 0x400 bytes of the validated World or LocalPlayer objects. The search runs at about 5-second intervals, scans no more than 64 aligned intermediary candidates, and never changes the game process. An **empty CSV (apart from its header) means no reference was detected within this deliberately limited search**, not that there is no stable path. This is *candidate path discovery*, **not automatic building object discovery or a validated stable pointer chain**. Check candidate root offsets across fresh matches and separate sessions before trusting them. In particular, `EDI` may be a reused UI object rather than an actual building.
+
+
+### Entity health probe: villager/Loom experiment (experimental)
+
+`aoe2hd_entity_health.exe` logs per-address read-only `float32` samples of candidate entity HP fields at `object + 0x34`. Use the **HP addresses** observed in the current session directly, without assuming object identities:
+
+```powershell
+Set-Content .\entity_health_phase.txt "after_loom"
+.\build2026\Release\aoe2hd_entity_health.exe --hp-address 0x141BD9CC --hp-address 0x141BDBB4 --hp-address 0x141BDD9C --csv aoe2hd_entity_health.csv --phase-file entity_health_phase.txt
+```
+
+Or pass base pointers with repeated `--base 0x...`. The two options can be mixed; repeated bases are deduplicated. For a controlled new match, identify live candidate addresses *before* Loom, start the monitor, and change the phase file from `before_loom` to `researching_loom` to `after_loom`. To distinguish individual units, damage one villager and check whether exactly one candidate address changes. CSV fields include phase, World/LocalPlayer, base, source HP address, float and raw values, readability, plausibility, and change kind. Samples are taken approximately every 250 ms and rows are emitted for changes, phase transitions, first observation, and read-status changes.
+
+**No identity is inferred**: three addresses containing 40.0 do not by themselves prove three separate villagers, nor that the field is current rather than maximum HP. Addresses are dynamic and must be revalidated after a game restart; `+0x34` is a candidate offset based on the observed building HP-copy instruction. This probe only reads external process memory and does not set breakpoints or modify the game.
