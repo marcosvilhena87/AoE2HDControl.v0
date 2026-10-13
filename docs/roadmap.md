@@ -1,6 +1,6 @@
 # Roadmap
 
-Última atualização: 2026-10-07.
+Última atualização: 2026-10-12.
 
 ## Marco 1 — cadeia estável até World
 
@@ -121,7 +121,7 @@ Pendente apenas nomear com maior precisão o objeto/contexto de lobby usado como
 
 ## Marco 5 — readiness / lifecycle
 
-Status: 🟡 avançado; o critério semântico foi validado em gameplay, faltando fechar a fronteira temporal de criação.
+Status: 🟡 avançado; a publicação do vetor e a criação parcial/completa de Gaia foram capturadas, e os três jogadores foram validados em gameplay. Falta determinar a primeira transição estrutural e sua relação temporal com gameplay-ready.
 
 Já confirmado:
 
@@ -182,7 +182,7 @@ size  = 3
 2 → Computer
 ~~~
 
-Os três call sites conhecidos de `FUN_007288B0` não dispararam na transição testada. Experimento atual: hardware write em `World+0x188` de uma nova instância para capturar a instrução que efetivamente aumenta `mPlayers.end`.
+Em 2026-10-12, hardware watch em `World+0x188` capturou a atualização de `mPlayers.end` em runtime `0x006D8A11`, após `begin` em `0x006D8A0C` e antes de `capacityEnd` em `0x006D8A19`. O vetor passou a size 3 **com os 24 bytes das entradas zerados**. Uma escrita em `mPlayers[0].object` produziu o estado transitório `(object!=0, controlBlock=0)`; `0x00648F75` publicou o `controlBlock` de Gaia. Os objetos Gaia/HumanOrCoop/Computer e `mLocalPlayerIndex=1` foram validados quando o mapa já estava jogável. As escritas nas entradas 1/2 não foram capturadas pelos breakpoints, apesar de aparecerem preenchidas no mesmo buffer. Isso **não** prova a fronteira exata de gameplay readiness.
 
 ## Marco 6 — jogador local
 
@@ -271,9 +271,9 @@ Detalhes: `docs/aoe2control-reference.md`.
 ## Ordem atual recomendada
 
 ~~~text
-1. hardware write em World+0x188 e fechar fronteira slots vazios → players válidos
-2. consolidar IsWorldReady()
-3. fechar GetLocalPlayer() como API
+1. consolidar validador `IsWorldStructurallyReady()` com snapshots e leituras seguras
+2. instrumentar primeira transição estrutural (incluindo publicações de entries 1/2) e correlacionar com `GameplayReady`
+3. fechar `GetLocalPlayer()` como API de leitura
 4. mapear Food/Wood/Gold/Stone
 5. mapear objetos/unidades
 6. mapear comandos
