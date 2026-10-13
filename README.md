@@ -2,6 +2,23 @@
 
 Projeto de engenharia reversa e reconstrução de uma API de controle para **Age of Empires II HD (AoK HD.exe 5.8.INT, x86)**. O **AoE2Control para Definitive Edition** é usado apenas como referência conceitual para definir alvos semânticos; offsets, layouts e estruturas do DE não são assumidos válidos no HD.
 
+## Uso local (Windows / Visual Studio 2026)
+
+Pasta de trabalho recomendada: `C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl`.
+
+```powershell
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl
+git pull origin main
+cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
+cmake --build build2026 --config Release
+ctest --test-dir build2026 -C Release --output-on-failure
+.\build2026\Release\aoe2hd_probe.exe
+```
+
+O `aoe2hd_probe.exe` apresenta `World`, jogadores e, quando disponíveis, comida, madeira, pedra e ouro. Para acompanhar transições de `World` entre partidas: `.\build2026\Release\aoe2hd_monitor.exe --interval-ms 250`. A leitura é somente leitura; os resultados ainda precisam ser validados em outras partidas.
+
+**Nota:** `git pull` requer um clone com `.git`. Se a pasta veio de um ZIP, preserve arquivos próprios e clone o repositório corretamente. Ao renomear/mover o projeto, recrie `build2026` para eliminar os caminhos absolutos armazenados pelo CMake.
+
 ## Estado atual
 
 A cadeia central até `World`, o vetor `mPlayers`, a ponte entre configuração/lobby e `WorldPlayer` e parte relevante do lifecycle de construção/reset foram validadas com Ghidra, RTTI e x32dbg.
