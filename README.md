@@ -554,3 +554,19 @@ If `SelectedEntityReader` was installed using the earlier local-only zip, keep i
 \`\`\`
 
 It runs read-only until Ctrl+C, sampling about every 250 ms, emitting rows on changes only. CSV statuses include \`ready\`, \`none\`, \`multiple_or_transition\`, \`world_unavailable\`, \`hp_invalid\`, and read/consistency failures. The monitor requires both selection slots to match for a single-object reading; it never invents the selected type, and owner \`other_player\` does **not** imply hostile diplomatic status. Raw candidate IDs/owner/type-reference values remain experimental. Changing or restarting the match invalidates previously captured object addresses. Existing CSV at the supplied path is overwritten when the tool starts.
+
+
+### EntityTypeResolver v1 — one-hop type-reference evidence
+
+The read-only \`aoe2hd_type_reference.exe\` follows the experimental \`Entity+0x0C\` reference **one hop** and samples the first 0x100 bytes of the referenced structure (64 aligned 32-bit words), with an address-range guard and a post-read pointer stability check. It never declares any field to be a confirmed type ID. Use object bases obtained from the **same live match**:
+
+\`\`\`powershell
+.\build2026\Release\aoe2hd_type_reference.exe --entity villager_a 0xADDRESS_A --entity villager_b 0xADDRESS_B --entity scout_ally 0xADDRESS_C --entity scout_enemy 0xADDRESS_D --prefix aoe2hd_type_reference
+\`\`\`
+
+Files:
+- \`<prefix>_summary.csv\`: candidate type references, whether the reference remained stable, number of readable fields.
+- \`<prefix>_fields.csv\`: raw 32-bit values at each definition-relative offset.
+- \`<prefix>_comparison.csv\`: differences among stable reference samples (no conclusion about type identity).
+
+For strong evidence, capture several same-type entities and cross-player examples and repeat in another match. Invalid, changed or inaccessible references must not be interpreted as zero-valued type IDs. Existing CSVs at the chosen prefix are overwritten.
