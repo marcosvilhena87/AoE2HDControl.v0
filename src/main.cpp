@@ -1,4 +1,5 @@
 #include "ProcessMemory.h"
+#include "ResourceReader.h"
 #include <iomanip>
 #include <iostream>
 
@@ -20,5 +21,14 @@ int main() {
         std::cout << i << " object=0x" << std::hex << s.players[i].object
                   << " vtable=0x" << s.players[i].vtable << std::dec << "\n";
     }
+    const auto resources = aoe2hd::ReadLocalResources(memory, result);
+    std::cout << "ResourcesStatus=" << aoe2hd::ResourceStatusName(resources.status) << "\n";
+    if (!resources.ready()) return 3;
+    const auto& r = resources.snapshot;
+    std::cout << "LocalPlayer=0x" << std::hex << r.localPlayer
+              << " ResourceTable=0x" << r.tableAddress << std::dec << "\n";
+    std::cout << std::fixed << std::setprecision(2)
+              << "Food=" << r.food << " Wood=" << r.wood
+              << " Stone=" << r.stone << " Gold=" << r.gold << "\n";
     return 0;
 }
