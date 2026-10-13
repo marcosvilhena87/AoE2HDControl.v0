@@ -43,6 +43,8 @@ int main(int argc, char** argv) {
         std::cerr << "Cannot create CSV: " << csvPath << "\n";
         return 2;
     }
+    const auto runTimestamp = std::chrono::system_clock::now().time_since_epoch();
+    const auto runId = std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(runTimestamp).count());
     csv << aoe2hd::EconomyCsvHeader() << '\n';
     csv.flush();
     if (!csv) return 2;
@@ -86,7 +88,7 @@ int main(int argc, char** argv) {
             // Initial rows for all four resources, one concise line on screen.
             if (event.type != "initial" || event.resource == "Food")
                 std::cout << "[" << elapsed << " ms] " << event.text << '\n';
-            csv << aoe2hd::EconomyCsvRow(elapsed, event) << '\n';
+            csv << runId << ',' << aoe2hd::EconomyCsvRow(elapsed, event) << '\n';
         }
         if (!events.empty()) {
             csv.flush();
