@@ -31,5 +31,17 @@ int main(){
  assert(!ReadEntityIdentity(f,0x10).readable);
  f.words.erase(0x12000+12);
  assert(!ReadEntityIdentity(f,0x12000).readable);
- std::cout<<"Entity identity reader tests passed\n";
+ WorldResult world;world.status=WorldStatus::Ready;
+ world.snapshot.localIndex=1;world.snapshot.players.resize(3);
+ world.snapshot.players[1].object=0x20000;world.snapshot.players[2].object=0x30000;
+ assert(ClassifyEntityOwnership(a,world)==EntityOwnership::Local);
+ assert(ClassifyEntityOwnership(b,world)==EntityOwnership::Local);
+ assert(ClassifyEntityOwnership(c,world)==EntityOwnership::OtherPlayer);
+ EntityIdentity unknown=a;unknown.candidateOwner=0x40000;
+ assert(ClassifyEntityOwnership(unknown,world)==EntityOwnership::Unmatched);
+ unknown.readable=false;
+ assert(ClassifyEntityOwnership(unknown,world)==EntityOwnership::Unknown);
+ world.status=WorldStatus::InvalidPlayer;
+ assert(ClassifyEntityOwnership(a,world)==EntityOwnership::Unknown);
+ std::cout<<"Entity identity reader tests passed\\n";
 }
