@@ -43,5 +43,5 @@ int main(){
  assert(ClassifyEntityOwnership(unknown,world)==EntityOwnership::Unknown);
  world.status=WorldStatus::InvalidPlayer;
  assert(ClassifyEntityOwnership(a,world)==EntityOwnership::Unknown);
- std::cout<<"Entity identity reader tests passed\\n";
+ std::cout<<"Entity identity reader tests passed\n";
 }
