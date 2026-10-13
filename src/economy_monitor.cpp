@@ -1,4 +1,5 @@
 #include "EconomyMonitor.h"
+#include "PopulationReader.h"
 #include "ProcessMemory.h"
 #include "WorldMonitor.h"
 #include <chrono>
@@ -65,6 +66,7 @@ int main(int argc, char** argv) {
         }
         aoe2hd::WorldResult world;
         aoe2hd::ResourceResult resources;
+        aoe2hd::PopulationResult population;
         std::string failure;
         if (!memory) {
             failure = "ProcessNotFound";
@@ -74,6 +76,7 @@ int main(int argc, char** argv) {
                 failure = std::string("World:") + aoe2hd::StatusName(world.status);
             } else {
                 resources = aoe2hd::ReadLocalResources(*memory, world);
+                if (resources.ready()) population = aoe2hd::ReadLocalPopulation(*memory, world, resources);
             }
             if (!memory->isAlive()) {
                 memory.reset();
@@ -81,12 +84,14 @@ int main(int argc, char** argv) {
                 resources = {};
             }
         }
-        const auto events = monitor.observe(generation, world.snapshot.world, resources, failure);
+        auto events = monitor.observe(generation, world.snapshot.world, resources, failure);
+        auto populationEvents = monitor.observePopulation(population);
+        events.insert(events.end(), populationEvents.begin(), populationEvents.end());
         const auto elapsed = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - started).count());
         for (const auto& event : events) {
             // Initial rows for all four resources, one concise line on screen.
-            if (event.type != "initial" || event.resource == "Food")
+            if (event.type != "initial" || event.resource == "Food" || event.resource == "PopulationUsed")
                 std::cout << "[" << elapsed << " ms] " << event.text << '\n';
             csv << runId << ',' << aoe2hd::EconomyCsvRow(elapsed, event) << '\n';
         }
