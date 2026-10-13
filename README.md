@@ -482,3 +482,17 @@ Set-Content .\entity_health_phase.txt "after_loom"
 Or pass base pointers with repeated `--base 0x...`. The two options can be mixed; repeated bases are deduplicated. For a controlled new match, identify live candidate addresses *before* Loom, start the monitor, and change the phase file from `before_loom` to `researching_loom` to `after_loom`. To distinguish individual units, damage one villager and check whether exactly one candidate address changes. CSV fields include phase, World/LocalPlayer, base, source HP address, float and raw values, readability, plausibility, and change kind. Samples are taken approximately every 250 ms and rows are emitted for changes, phase transitions, first observation, and read-status changes.
 
 **No identity is inferred**: three addresses containing 40.0 do not by themselves prove three separate villagers, nor that the field is current rather than maximum HP. Addresses are dynamic and must be revalidated after a game restart; `+0x34` is a candidate offset based on the observed building HP-copy instruction. This probe only reads external process memory and does not set breakpoints or modify the game.
+
+
+### Entity HP damage validation & pointer-reference experiment (2026-10-13)
+
+A controlled in-game damage experiment provided strong evidence for a *current-HP* field at candidate entity \`+0x34\`. With three candidate float32 addresses initially reading 40.0, only \`0x141BD9CC\` changed, in five steps: 40 → 38 → 36 → 34 → 32 → 30. The two other candidates \`0x141BDBB4\` and \`0x141BDD9C\` yielded no change events during the capture. Corresponding candidate object bases are \`0x141BD998\`, \`0x141BDB80\`, \`0x141BDD68\`. These addresses are valid only in their original match; individual villager identities and general-purpose enumeration remain unverified.
+
+Optional next experiment: add \`--discover-pointers\` to \`aoe2hd_entity_health.exe\` with the validated bases or \`--hp-address\` values:
+
+\`\`\`powershell
+.\build2026\Release\aoe2hd_entity_health.exe --hp-address 0x141BD9CC --hp-address 0x141BDBB4 --hp-address 0x141BDD9C --discover-pointers --csv aoe2hd_entity_health_discovery.csv --phase-file entity_health_phase.txt
+Import-Csv .\aoe2hd_entity_pointer_hits.csv | Format-Table -AutoSize
+\`\`\`
+
+The optional \`aoe2hd_entity_pointer_hits.csv\` contains candidate direct and one-hop references to each **object base** found only within the first 0x400 bytes of the validated World and LocalPlayer roots, sampled approximately every five seconds and bounded to 64 intermediate addresses. This reuses the existing conservative pointer-reference scanner; it **does not** yet enumerate all units or scan arbitrary process memory. An empty result does not rule out a pointer chain elsewhere. Confirm candidate offsets independently in a new match before calling them stable. All access remains read-only.
