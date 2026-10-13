@@ -3,7 +3,7 @@ project(AoE2HDControl LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(aoe2hd_world src/WorldReader.cpp src/WorldMonitor.cpp src/ResourceReader.cpp src/EconomyMonitor.cpp src/PopulationReader.cpp src/GameplayReadinessMonitor.cpp src/DerivedEventDetector.cpp src/UnitDiscovery.cpp src/UnitContentTracker.cpp src/UnitPointerProbe.cpp src/ObjectFieldSampler.cpp src/ProductionProgressProbe.cpp)
+add_library(aoe2hd_world src/WorldReader.cpp src/WorldMonitor.cpp src/ResourceReader.cpp src/EconomyMonitor.cpp src/PopulationReader.cpp src/GameplayReadinessMonitor.cpp src/DerivedEventDetector.cpp src/UnitDiscovery.cpp src/UnitContentTracker.cpp src/UnitPointerProbe.cpp src/ObjectFieldSampler.cpp src/ProductionProgressProbe.cpp src/AbsoluteProgressMonitor.cpp)
 target_include_directories(aoe2hd_world PUBLIC include)
 
 if(WIN32)
@@ -65,6 +65,9 @@ if(BUILD_TESTING)
   add_executable(production_progress_probe_tests tests/ProductionProgressProbeTests.cpp)
   target_link_libraries(production_progress_probe_tests PRIVATE aoe2hd_world)
   add_test(NAME production_progress_probe_tests COMMAND production_progress_probe_tests)
+  add_executable(absolute_progress_monitor_tests tests/AbsoluteProgressMonitorTests.cpp)
+  target_link_libraries(absolute_progress_monitor_tests PRIVATE aoe2hd_world)
+  add_test(NAME absolute_progress_monitor_tests COMMAND absolute_progress_monitor_tests)
 endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
