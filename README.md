@@ -360,3 +360,8 @@ ctest --test-dir build2026 -C Release --output-on-failure
 ```
 
 A observação por polling (250 ms) não distingue automaticamente coleta de outras fontes de ganho nem capta necessariamente todos os eventos intermediários. Não é uma medição exata de coleta/gasto brutos. O programa continua somente leitura em relação ao jogo; escreve apenas o CSV no disco local.
+
+
+## Analisador econômico por sessão
+
+Execute `python scripts/analyze_economy.py aoe2hd_economy.csv --output aoe2hd_summary.csv`. O analisador (Python, sem dependências externas) agrupa por `run_id` e `session`, e calcula saldos iniciais/finais, aumentos e reduções observados, líquido e variação líquida por minuto. Lê arquivos anteriores sem `run_id` como `legacy`. Os registros iniciais agora deixam `previous` e `delta` vazios. O monitor sobrescreve o CSV a cada execução; use nomes distintos para preservar capturas.
