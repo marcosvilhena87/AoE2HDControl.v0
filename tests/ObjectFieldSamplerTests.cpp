@@ -16,7 +16,7 @@ int main() {
  UnitVectorCandidate c;c.source="World";c.offset=0x88;c.stride=8;c.count=1;
  c.begin=0x4000;c.reason=UnitCandidateReason::Accepted;
  memory.words[0x4000]=0x5000;
- for(uint32_t i=0;i<16;++i)memory.words[0x5000+4*i]=i;
+ for(uint32_t i=0;i<32;++i)memory.words[0x5000+4*i]=i;
  ObjectFieldSampler sampler;
  assert(sampler.observe(memory,{c}).empty());
  memory.words[0x500c]=99;
