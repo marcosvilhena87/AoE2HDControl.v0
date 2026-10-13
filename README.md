@@ -316,3 +316,7 @@ Os três objetos apontavam em `+0x04` para `World*=0x0F5428D0`; todos obedeciam 
 ## Protótipo de leitura (C++17)
 
 Há agora um **protótipo experimental e somente leitura** com `ReadWorld()`, `GetLocalPlayer()` e diagnóstico `aoe2hd_probe`, além de testes unitários com memória simulada. Para instruções de compilação Win32, limitações de prontidão e estados suportados, consulte [docs/implementation.md](docs/implementation.md). Não há ainda API de comandos nem garantia de prontidão operacional.
+
+## Monitor de ciclo de vida (experimental)
+
+`aoe2hd_monitor.exe` registra mudanças observadas em `World` e no jogador local, incluindo o desaparecimento e a reaparição do processo. É somente leitura e não equivale a uma detecção comprovada de `GameplayReady`. Consulte [docs/implementation.md](docs/implementation.md) para compilar e testar.
