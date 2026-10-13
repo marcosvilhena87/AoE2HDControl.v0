@@ -320,3 +320,7 @@ Há agora um **protótipo experimental e somente leitura** com `ReadWorld()`, `G
 ## Monitor de ciclo de vida (experimental)
 
 `aoe2hd_monitor.exe` registra mudanças observadas em `World` e no jogador local, incluindo o desaparecimento e a reaparição do processo. É somente leitura e não equivale a uma detecção comprovada de `GameplayReady`. Consulte [docs/implementation.md](docs/implementation.md) para compilar e testar.
+
+## Leitura de recursos econômicos (experimental)
+
+A cadeia `[LocalPlayer + 0x3C] -> ResourceTable` foi confirmada em uma partida de **AoK HD.exe 5.8.INT (x86)**, por instruções Assembly e mudanças individuais na interface. Os quatro primeiros `float32` são **comida (+0x00)**, **madeira (+0x04)**, **pedra (+0x08)** e **ouro (+0x0C)**. O programa `aoe2hd_probe.exe` agora utiliza `ReadLocalResources()` para exibir os valores em modo somente leitura. Não armazena endereços absolutos entre partidas. Consulte [docs/implementation.md](docs/implementation.md) para executar e testar. Ainda não foi validado em todas as configurações ou versões do jogo.
