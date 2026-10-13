@@ -34,9 +34,14 @@ int main(int argc,char** argv){
    entries.push_back({name,base});
   }else if(arg=="--prefix"&&i+1<argc)prefix=argv[++i];
   else if(arg=="--bytes"&&i+1<argc){
-   if(!parse(argv[++i],bytes)||bytes>0x400u||bytes%4u!=0){
+   const std::string amount=argv[++i];
+   char* end=nullptr;errno=0;
+   const auto parsed=std::strtoull(amount.c_str(),&end,0);
+   if(amount.empty()||amount[0]=='-'||amount[0]=='+'||errno||
+      end==amount.c_str()||*end!='\0'||parsed<4||parsed>0x400u||parsed%4u!=0){
     std::cerr<<"Invalid --bytes; use 0x100 or 0x400\n";return 2;
    }
+   bytes=static_cast<uint32_t>(parsed);
   }else{std::cerr<<"Usage: aoe2hd_entity_type --entity villager 0xBASE --entity house 0xBASE [--prefix path]\n";return 2;}
  }
  if(entries.size()<2){std::cerr<<"Provide at least two known object bases\n";return 2;}
