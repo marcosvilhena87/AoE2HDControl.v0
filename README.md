@@ -396,3 +396,8 @@ The continuous monitor uses `GameplayReadinessMonitor` to withhold telemetry unt
 ## Eventos econômicos derivados (experimental)
 
 O monitor emite `derived` para aumentos observados de `VillagerCount` (`VillagerProduced`) e de `PopulationLimit` (`PopulationCapacityIncreased`). Esses fatos são derivados dos contadores, não da identificação de unidades nem de edifícios. Quando observa gasto compatível de 50 Food ou 25 Wood nos até 120 segundos anteriores, emite opcionalmente `hypothesis` (`PossibleVillagerFoodCost` ou `PossibleHouseWoodCost`). A associação é apenas plausível, nunca causalmente demonstrada. Não associa entre sessões e descarta candidatos após perda de leitura. As linhas usam o esquema CSV existente; o analisador de recursos continua ignorando `derived` e `hypothesis`. Teste: `derived_event_tests`.
+
+
+## Descoberta experimental de vetores de unidades
+
+Execute `build2026\\Release\\aoe2hd_unit_discovery.exe --csv aoe2hd_unit_candidates.csv` com uma partida aberta e treine um aldeão. A ferramenta **não identifica unidades ainda**: examina somente estruturas candidatas a vetores dentro dos primeiros 0x400 bytes do jogador local, limita tamanho/leituras e registra mudanças de contagem no CSV. Compare candidatos antes/depois do treinamento; muitos serão falsos positivos e vetores vazios nao sao descobertos. A leitura é externa e somente leitura. Não use os endereços de uma sessão em outra. Teste `unit_discovery_tests`.
