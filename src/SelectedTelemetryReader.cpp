@@ -32,6 +32,19 @@ SelectedTelemetry ReadSelectedTelemetry(const MemoryReader& memory,const WorldRe
     a!=s.slot15c||b!=s.slot160){
   s.status=TelemetryStatus::ChangedDuringRead;return s;
  }
+ // Optional experimental definition fields; do not invalidate HP/identity on failure.
+ const uint32_t ref=s.identity.candidateTypeRef;
+ if(ref>=0x10000u && !(ref&3u) && ref<=UINT32_MAX-0x10u){
+  uint32_t candidateA=0,candidateB=0,confirm=0;
+  const bool fieldsOk=memory.read(ref+0x08,&candidateA,4)&&
+    memory.read(ref+0x0c,&candidateB,4);
+  const bool confirmOk=memory.read(s.object+0x0c,&confirm,4);
+  s.typeReferenceStable=confirmOk&&confirm==ref;
+  s.typeCandidatesReadable=fieldsOk&&s.typeReferenceStable;
+  if(s.typeCandidatesReadable){
+   s.typeCandidateA=candidateA;s.typeCandidateB=candidateB;
+  }
+ }
  s.ownership=ClassifyEntityOwnership(s.identity,world);
  s.status=TelemetryStatus::Ready;
  return s;
