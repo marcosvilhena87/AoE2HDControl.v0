@@ -18,7 +18,7 @@ int main(int argc,char** argv){
  if(!memory.open()){std::cerr<<"AoK HD.exe not found\n";return 2;}
  std::ofstream out(path,std::ios::trunc);
  if(!out){std::cerr<<"Cannot create CSV\n";return 2;}
- out<<"elapsed_ms,world,local_player,status,slot_15c,slot_160,object,hp_float,hp_raw,identity_readable,candidate_id_08,signature_00,candidate_type_ref_0c,candidate_owner_10,ownership\n";
+ out<<"elapsed_ms,world,local_player,status,slot_15c,slot_160,object,hp_float,hp_raw,identity_readable,candidate_id_08,signature_00,candidate_type_ref_0c,candidate_owner_10,ownership,type_ref_stable,type_candidates_readable,type_candidate_a_08,type_candidate_b_0c\n";
  std::signal(SIGINT,stop);
  const auto start=std::chrono::steady_clock::now();
  bool first=true;aoe2hd::SelectedTelemetry previous;uint32_t lastWorld=0,lastLocal=0;
@@ -36,7 +36,11 @@ int main(int argc,char** argv){
    sample.identity.readable!=previous.identity.readable||
    sample.identity.candidateId!=previous.identity.candidateId||
    sample.identity.candidateOwner!=previous.identity.candidateOwner||
-   sample.ownership!=previous.ownership;
+   sample.ownership!=previous.ownership||
+   sample.typeReferenceStable!=previous.typeReferenceStable||
+   sample.typeCandidatesReadable!=previous.typeCandidatesReadable||
+   sample.typeCandidateA!=previous.typeCandidateA||
+   sample.typeCandidateB!=previous.typeCandidateB;
   if(changed){
    const auto ms=std::chrono::duration_cast<std::chrono::milliseconds>(
        std::chrono::steady_clock::now()-start).count();
@@ -46,13 +50,20 @@ int main(int argc,char** argv){
     <<sample.hp<<','<<sample.hpRaw<<','<<sample.identity.readable<<','
     <<sample.identity.candidateId<<','<<sample.identity.signature<<','
     <<sample.identity.candidateTypeRef<<','<<sample.identity.candidateOwner<<','
-    <<aoe2hd::EntityOwnershipName(sample.ownership)<<'\n';
+    <<aoe2hd::EntityOwnershipName(sample.ownership)<<','
+    <<sample.typeReferenceStable<<','<<sample.typeCandidatesReadable<<',';
+   if(sample.typeCandidatesReadable)out<<sample.typeCandidateA;
+   out<<',';
+   if(sample.typeCandidatesReadable)out<<sample.typeCandidateB;
+   out<<'\n';
    out.flush();
    std::cout<<"["<<ms<<" ms] "<<aoe2hd::TelemetryStatusName(sample.status)
     <<" object=0x"<<std::hex<<sample.object<<std::dec
     <<" id="<<sample.identity.candidateId
     <<" owner="<<aoe2hd::EntityOwnershipName(sample.ownership)
-    <<" hp="<<sample.hp<<'\n';
+    <<" hp="<<sample.hp;
+   if(sample.typeCandidatesReadable)std::cout<<" typeA="<<sample.typeCandidateA<<" typeB="<<sample.typeCandidateB;
+   std::cout<<'\n';
   }
   first=false;previous=sample;lastWorld=worldPtr;lastLocal=localPtr;
   std::this_thread::sleep_for(std::chrono::milliseconds(250));
