@@ -3,7 +3,7 @@ project(AoE2HDControl LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(aoe2hd_world src/WorldReader.cpp src/WorldMonitor.cpp src/ResourceReader.cpp src/EconomyMonitor.cpp src/PopulationReader.cpp src/GameplayReadinessMonitor.cpp src/DerivedEventDetector.cpp src/UnitDiscovery.cpp src/UnitContentTracker.cpp src/UnitPointerProbe.cpp)
+add_library(aoe2hd_world src/WorldReader.cpp src/WorldMonitor.cpp src/ResourceReader.cpp src/EconomyMonitor.cpp src/PopulationReader.cpp src/GameplayReadinessMonitor.cpp src/DerivedEventDetector.cpp src/UnitDiscovery.cpp src/UnitContentTracker.cpp src/UnitPointerProbe.cpp src/ObjectFieldSampler.cpp)
 target_include_directories(aoe2hd_world PUBLIC include)
 
 if(WIN32)
@@ -56,6 +56,9 @@ if(BUILD_TESTING)
   add_executable(unit_pointer_probe_tests tests/UnitPointerProbeTests.cpp)
   target_link_libraries(unit_pointer_probe_tests PRIVATE aoe2hd_world)
   add_test(NAME unit_pointer_probe_tests COMMAND unit_pointer_probe_tests)
+  add_executable(object_field_sampler_tests tests/ObjectFieldSamplerTests.cpp)
+  target_link_libraries(object_field_sampler_tests PRIVATE aoe2hd_world)
+  add_test(NAME object_field_sampler_tests COMMAND object_field_sampler_tests)
 endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
