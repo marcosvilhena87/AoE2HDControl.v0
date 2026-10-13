@@ -10,6 +10,11 @@ namespace aoe2hd {
 ProcessMemory::~ProcessMemory() {
     if (handle_) CloseHandle(static_cast<HANDLE>(handle_));
 }
+bool ProcessMemory::isAlive() const {
+    if (!handle_) return false;
+    DWORD code = 0;
+    return GetExitCodeProcess(static_cast<HANDLE>(handle_), &code) && code == STILL_ACTIVE;
+}
 bool ProcessMemory::read(uint32_t address, void* destination, size_t bytes) const {
     if (!handle_) return false;
     SIZE_T readBytes = 0;
