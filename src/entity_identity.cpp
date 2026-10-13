@@ -37,7 +37,8 @@ int main(int argc,char** argv){
  if(!memory.open()){std::cerr<<"AoK HD.exe not found\n";return 2;}
  std::ofstream out(path,std::ios::trunc);
  if(!out){std::cerr<<"Cannot open CSV\n";return 2;}
- out<<"label,object,readable,signature_00,candidate_id_08,candidate_type_ref_0c,candidate_owner_10,relation_to_first\n";
+ const auto world=aoe2hd::ReadWorld(memory,memory.moduleBase());
+ out<<"label,object,readable,signature_00,candidate_id_08,candidate_type_ref_0c,candidate_owner_10,relation_to_first,ownership,world_ready,local_player\n";
  std::vector<aoe2hd::EntityIdentity> samples;
  for(const auto& input:inputs)samples.push_back(aoe2hd::ReadEntityIdentity(memory,input.object));
  for(size_t i=0;i<inputs.size();++i){
@@ -50,7 +51,8 @@ int main(int argc,char** argv){
   }
   out<<inputs[i].label<<','<<s.object<<','<<s.readable<<','<<s.signature
     <<','<<s.candidateId<<','<<s.candidateTypeRef<<','<<s.candidateOwner
-    <<','<<relation<<'\n';
+    <<','<<relation<<','<<aoe2hd::EntityOwnershipName(aoe2hd::ClassifyEntityOwnership(s,world))
+    <<','<<world.ready()<<','<<(aoe2hd::GetLocalPlayer(world)?aoe2hd::GetLocalPlayer(world)->object:0)<<'\n';
  }
  std::cout<<"Candidate identity fields saved: "<<path
   <<". Values are not yet confirmed IDs or owners.\n";
