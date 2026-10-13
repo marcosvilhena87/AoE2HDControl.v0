@@ -1,5 +1,6 @@
 #include "ProcessMemory.h"
 #include "ResourceReader.h"
+#include "PopulationReader.h"
 #include <iomanip>
 #include <iostream>
 
@@ -30,5 +31,13 @@ int main() {
     std::cout << std::fixed << std::setprecision(2)
               << "Food=" << r.food << " Wood=" << r.wood
               << " Stone=" << r.stone << " Gold=" << r.gold << "\n";
+    const auto population = aoe2hd::ReadLocalPopulation(memory, result, resources);
+    std::cout << "PopulationStatus=" << aoe2hd::PopulationStatusName(population.status) << "\n";
+    if (!population.ready()) return 4;
+    const auto& p = population.snapshot;
+    std::cout << "CurrentPopulation=" << p.used
+              << " FreePopulationSlots=" << p.freeSlots
+              << " PopulationLimit=" << p.limit
+              << " VillagerCount=" << p.villagers << "\n";
     return 0;
 }
