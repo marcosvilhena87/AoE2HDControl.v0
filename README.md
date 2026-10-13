@@ -570,3 +570,14 @@ Files:
 - \`<prefix>_comparison.csv\`: differences among stable reference samples (no conclusion about type identity).
 
 For strong evidence, capture several same-type entities and cross-player examples and repeat in another match. Invalid, changed or inaccessible references must not be interpreted as zero-valued type IDs. Existing CSVs at the chosen prefix are overwritten.
+
+
+### Cross-player entity type experiment
+
+Run \`aoe2hd_cross_player_type.exe\` with **current-session** object addresses obtained by individual selection of own and other-player units/buildings. For each entity, pass a common kind label, a distinct entity label, and object address. The kind labels are **operator-provided**, not inferred.
+
+\`\`\`powershell
+.\build2026\Release\aoe2hd_cross_player_type.exe --entity scout scout_local 0xLOCAL_SCOUT --entity scout scout_other 0xOTHER_SCOUT --entity town_center tc_local 0xLOCAL_TC --entity town_center tc_other 0xOTHER_TC --prefix aoe2hd_cross_player
+\`\`\`
+
+\`<prefix>_samples.csv\` records candidate reference stability, owner classification and definition-relative raw candidate fields \`+0x08\` and \`+0x0C\`. \`<prefix>_pairs.csv\` compares candidate values for **pairs with the same supplied kind**, including an indicator of local-vs-other-player pairing. A result of \`equal\` is evidence only, not an officially verified type ID; \`different\` may reflect civilization-dependent definitions; \`insufficient\` means missing/unstable values. Read-only memory access. Do not reuse object addresses between matches. CSV output overwrites files with the supplied prefix.
