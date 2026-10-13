@@ -496,3 +496,18 @@ Import-Csv .\aoe2hd_entity_pointer_hits.csv | Format-Table -AutoSize
 ```
 
 The optional `aoe2hd_entity_pointer_hits.csv` contains candidate direct and one-hop references to each **object base** found only within the first 0x400 bytes of the validated World and LocalPlayer roots, sampled approximately every five seconds and bounded to 64 intermediate addresses. This reuses the existing conservative pointer-reference scanner; it **does not** yet enumerate all units or scan arbitrary process memory. An empty result does not rule out a pointer chain elsewhere. Confirm candidate offsets independently in a new match before calling them stable. All access remains read-only.
+
+
+### Experimental LocalPlayer selection-region tracker
+
+After identifying direct references to three HP-bearing objects within the local player's first 0x400 bytes, the read-only entity-health executable now supports `--watch-selection`, even without supplying any `--hp-address` or `--base`:
+
+```powershell
+Set-Content .\entity_health_phase.txt "none"
+.\build2026\Release\aoe2hd_entity_health.exe --watch-selection --phase-file entity_health_phase.txt
+Import-Csv .\aoe2hd_selection_pointers.csv | Format-Table elapsed_ms,phase,offset,pointer,hp_float,kind -AutoSize
+```
+
+The monitor reads five candidate pointer slots at **LocalPlayer+0x15C, +0x160, +0x164, +0x168 and +0x16C** every ~250 ms. For each aligned candidate pointer, it attempts a read-only float32 HP read at `pointer + 0x34`. The resulting `aoe2hd_selection_pointers.csv` records initial values, pointer changes and clears, read status changes, HP changes and phase transitions. Use phase markers such as `none`, `villager_a`, `villager_b` and `villager_c` while selecting and deselecting units. The original explicit-address HP monitor and `--discover-pointers` remain available and can be combined with `--watch-selection`.
+
+**These offsets are candidates, not a verified unit enumeration table.** The fields were observed to hold changing references and may represent selection/UI/controller state instead of a full roster. Pointers may be stale; failed reads are recorded rather than treated as health, and plausibility of a float value does not establish object identity. Repeat the experiment in a new match to validate any structural inference. Read-only access only.
