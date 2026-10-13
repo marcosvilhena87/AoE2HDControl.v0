@@ -5,13 +5,15 @@ This is an **experimental** C++17 proof-of-concept for AoK HD.exe 5.8.INT (32-bi
 ## Build (Windows, Visual Studio / CMake)
 
 ```powershell
-cmake -S . -B build -A Win32
-cmake --build build --config Release
-ctest --test-dir build -C Release --output-on-failure
-.\build\Release\aoe2hd_probe.exe
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl
+git pull origin main
+cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
+cmake --build build2026 --config Release
+ctest --test-dir build2026 -C Release --output-on-failure
+.\build2026\Release\aoe2hd_probe.exe
 ```
 
-Run with the same Windows account as the game. The tool finds `AoK HD.exe` and the process module base. A return code of 0 means the structural checks passed; 1 means not structurally ready; 2 means the process could not be opened. Closing/restarting the game requires restarting the probe.
+Run with the same Windows account as the game. The tool finds `AoK HD.exe` and the process module base. A return code of 0 means both the World structural checks and resource read passed; 1 means World is not structurally ready; 2 means the process could not be opened; 3 means World is ready but the resource read failed. Closing/restarting the game requires restarting the probe.
 
 ## Validation and limits
 
@@ -23,7 +25,7 @@ Run with the same Windows account as the game. The tool finds `AoK HD.exe` and t
 - The synthetic tests cover the confirmed good snapshot, a null control block, null object, empty vector, invalid local index and invalid World vtable.
 - The x86 target's address space is assumed; building the probe as Win32 is recommended. No version/hash gate exists yet.
 
-Next: expand dynamic transition tests and identify player resources by read-only inspection.
+Next: validate resource readings across new matches and investigate more player attributes.
 
 ## Monitor continuo de ciclo de vida (2026-10-12)
 
@@ -58,7 +60,7 @@ ResourceTable + 0x0C = Gold  (float32)
 O `aoe2hd_probe.exe` passa a exibir os quatro recursos e o endereco da tabela, obtidos apenas por `ReadProcessMemory`. Os valores sao floats brutos; o HUD pode exibir apenas sua parte inteira. A leitura valida o ponteiro, campos finitos nao negativos e relê os campos de referencia do jogador e da tabela para detectar parte das transicoes. **Nao e uma fotografia atomica do jogo**. Os offsets sao especificos da versao investigada; validar em outras partidas e configuracoes.
 
 ```powershell
-cd C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControlAtualizado
+cd C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl
 git pull origin main
 cmake -S . -B build2026 -G "Visual Studio 18 2026" -A Win32
 cmake --build build2026 --config Release
@@ -67,3 +69,7 @@ ctest --test-dir build2026 -C Release --output-on-failure
 ```
 
 `ResourcesStatus=Ready` significa que o leitor conseguiu recuperar os quatro atributos com checagens basicas. Se o World estiver pronto mas a tabela nao estiver legivel, o probe exibe um status de falha especifico e retorna codigo 3; codigo 1 = World nao pronto; codigo 2 = processo indisponivel. O novo teste `resource_reader_tests` verifica leitura, alteracao de ouro, tabela nula, falha de leitura, valor invalido e mudanca do back-pointer.
+
+### Pasta de trabalho no Windows
+
+A pasta preferida para clonar, atualizar, compilar e executar o projeto é `C:\Minha_Pasta\Jogos\Age_of_Empires_2\AoE2HDControl` (sem o sufixo `Atualizado`). Se a pasta já possuir `.git`, use `git pull origin main`. Se o Git responder `not a git repository`, a pasta não é um clone válido: preserve quaisquer arquivos locais e utilize um clone Git antes de tentar atualizar. Após mover ou renomear uma árvore já compilada, remova somente o diretório gerado `build2026` e reconfigure o CMake para evitar caminhos antigos em `CMakeCache.txt`.
