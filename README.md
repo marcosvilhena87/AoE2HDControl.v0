@@ -629,3 +629,16 @@ The Windows read-only \`aoe2hd_idle_villager_discovery.exe\` samples 0x400 bytes
 \`\`\`
 
 Focus the PowerShell console and press \`w\` after selecting a **visibly working** villager; press \`i\` only after clicking the **Next Idle Villager** button in the game's HUD and verifying which villager is selected. Optionally press \`s\` for a manually stopped villager (recorded separately, excluded from the automatic working-vs-idle comparison). Repeat with several villagers, ideally testing the **same individual** while working and then after becoming idle. \`q\` ends and writes \`<prefix>_fields.csv\` and \`<prefix>_candidates.csv\`. The latter marks offsets whose observed working and idle-button-selected values are disjoint; these are **candidates**, not established idle flags. Different IDs, role definitions, target pointers, or timestamps can cause false correlations. The experiment neither clicks HUD buttons nor reads the game's idle list directly. Existing output files with the same prefix are overwritten.
+
+
+### VillagerCarryDiscovery — HUD-labelled carried resource investigation
+
+\`aoe2hd_villager_carry_discovery.exe\` locks the first selected local villager (same object and candidate individual ID), captures the first 0x400 bytes of its entity, and checks identity and definition reference before/after every capture. In the PowerShell console, enter one line per **observed** HUD load and action after checking the game:
+
+\`\`\`powershell
+.\build2026\Release\aoe2hd_villager_carry_discovery.exe --prefix aoe2hd_villager_carry
+\`\`\`
+
+Accepted commands are \`gathering 0 0\`, \`gathering 5 0\`, \`stopped 5 1\`, \`resumed 5 0\`, \`deposited 0 0\`, \`reassigned 0 0\`, followed by \`q\` to write the results. Values are HUD labels, not automatic detection. The third field indicates *manually stopped* status, and only \`stopped\` uses 1. Keep the same villager selected. HUD load is validated in the observed 0–10 range; games/bonuses with higher limits need later adaptation. Repeated samples, especially at different nonzero loads and stopped-with-preserved-load, are more informative than only 0 and 10. Reassignment may change type definition between snapshots, which is recorded but not automatically mapped to a new role.
+
+Two CSVs are written: \`<prefix>_fields.csv\` (all raw 32-bit entity fields and corresponding finite float interpretations) and \`<prefix>_candidates.csv\` (ranking by match to HUD load as an IEEE754 float, plus preservation across adjacent working-to-stopped snapshots). Each offset is **only a hypothesis**. It is possible that the true load is represented as an integer, lives beyond 0x400 bytes, or belongs to another object; a low/empty candidate ranking does not prove that the HUD load is inaccessible. No memory writes or automated game commands are performed. Existing output with the same prefix is overwritten.
