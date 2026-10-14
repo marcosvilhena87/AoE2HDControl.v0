@@ -1,4 +1,6 @@
 #include "EntityReferenceDiscovery.h"
+#include "UnitDiscovery.h"
+#include <vector>
 #include "SelectedTelemetryReader.h"
 #include "ProcessMemory.h"
 #include <chrono>
@@ -38,8 +40,14 @@ int main(int argc,char** argv){
     if(anchor!=lastAnchor){logged.clear();lastAnchor=anchor;
      std::cout<<"Anchor id="<<selection.identity.candidateId<<" object="<<anchor<<'\n';}
     struct Region {uint32_t base;const char* source;};
-    const Region regions[]={{world.snapshot.world,"World"},{player->object,"LocalPlayer"}};
+    std::vector<Region> regions={{world.snapshot.world,"World"},
+      {player->object,"LocalPlayer"}};
+    for(const auto& candidate:aoe2hd::DiscoverUnitVectors(memory,world,0x800,512))
+     if(candidate.begin&&candidate.end>candidate.begin)
+      regions.push_back({candidate.begin,"CandidateBuffer"});
+    std::set<uint32_t> scannedBases;
     for(const auto& region:regions){
+     if(!scannedBases.insert(region.base).second)continue;
      if(region.base>UINT32_MAX-0x4000u)continue;
      auto hits=aoe2hd::FindExactReferences(memory,region.base,0x4000,anchor,512);
      auto ms=std::chrono::duration_cast<std::chrono::milliseconds>(
