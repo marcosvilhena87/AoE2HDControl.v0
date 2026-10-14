@@ -665,3 +665,10 @@ The CSV records time, entity ID and pointer, definition reference, raw 32-bit va
 
 Output columns: elapsed time, candidate entity ID, object, definition pointer, float load, window duration, cumulative positive increments, complete-window flag, activity evidence. States: `activity_unknown` (including incomplete coverage / unreadable selection), `recent_gathering_progress`, `no_recent_progress`, `capacity_reached` (experimental threshold 10), and `load_cleared_cause_unknown`. A positive increase establishes progress **during** the interval only. No change is **not** proof of idleness. Load clearing does not prove deposit, and movement or non-gathering actions are not inferred. Switching definition, losing selection, or selecting a different unit resets evidence. End with Ctrl+C. Existing CSV is overwritten. The threshold may not apply with civilization bonuses, technologies or other contexts; validate on other resources/villagers.
 
+
+
+### GatheringActivityMonitor v2.1 — selection guard
+
+The `aoe2hd_gathering_activity.exe` executable now checks an *experimental* set of known villager definition candidate IDs (5121–5126, 5402, 5482, 5496, 5499) before locking. This prevents the previously observed Town Center candidate type 5164 from locking the monitor. The set is **not a complete or authoritative unit-type catalog**: unsupported actual villagers are deliberately rejected pending validation. The first valid selected local villager locks by candidate individual ID and object pointer; selecting another unit or deselecting pauses sampling and **does not relock**. Return to the original unit to resume, or restart to select a different one.
+
+Output adds `selection_status`, `lock_status` and `type_a` to distinguish rejected selection, missing definition, changed selection and interrupted reads. The CSV captures diagnostic rows even while paused. Load remains experimental and `no_recent_progress` is not equivalent to idle.
