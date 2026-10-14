@@ -607,3 +607,14 @@ Select a villager, press \`0\` in the console, order food, return to console and
 \`\`\`
 
 Read-only sampling approximately every 250 ms logs definition-pointer and type-candidate changes, the manually observed role and action, and selection loss. Avoid switching units: first valid selected local entity ID is locked. Console annotation timestamps are approximate and are not command times. \`q\` quits. Output is overwritten at startup. This is a *labelled experiment*, not a verified \`VillagerActionReader\` — discovering authoritative action-state memory offsets remains future work.
+
+
+### VillagerActionDiscovery v1 — controlled memory triplet
+
+\`aoe2hd_villager_action_discovery.exe\` captures three bounded snapshots (0x400 bytes, aligned 32-bit fields) of the **same selected, local entity**, locked by both object address and candidate individual ID. With the villager selected, perform a **gathering -> stopped -> gathering** sequence and, after visually confirming each phase in-game, focus the PowerShell console and press \`1\`, \`2\`, \`3\` respectively. The program verifies selection and definition stability *within* each snapshot; changing definition between snapshots is explicitly warned about. \`q\` quits.
+
+\`\`\`powershell
+.\build2026\Release\aoe2hd_villager_action_discovery.exe --prefix aoe2hd_villager_action
+\`\`\`
+
+It writes \`<prefix>_fields.csv\` for the three raw snapshots and \`<prefix>_candidates.csv\` listing every offset with \`changed_on_stop\` and \`reversed_on_resume\` flags. A reversed field is **only a discovery candidate**, not proof of an action flag; positions, target pointers, timers, and other values can exhibit the same pattern. Repeat with multiple villagers and rounds before considering an action-state address. The CLI is read-only; it does not issue game commands, auto-read HUD state, or detect the exact time of an action change. Never select another unit during the three snapshots. Output is overwritten at the specified prefix.
