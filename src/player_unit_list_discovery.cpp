@@ -39,8 +39,8 @@ int main(int argc,char** argv){
      std::chrono::steady_clock::now()-started).count();
    for(const auto& entry:result){
     for(const auto& ev:entry.entries){
-     detail<<ms<<','<<entry.summary.vector.source<<','<<entry.vector.offset<<','
-      <<entry.vector.stride<<','<<ev.index<<','<<ev.word<<','
+     detail<<ms<<','<<entry.summary.vector.source<<','<<entry.summary.vector.offset<<','
+      <<entry.summary.vector.stride<<','<<ev.index<<','<<ev.word<<','
       <<ev.value<<','<<ev.target<<','<<ev.entityId<<','
       <<ev.owner<<','<<ev.kind<<','<<ev.selectedMatch<<','<<ev.localOwner<<'\n';
     }
@@ -51,7 +51,7 @@ int main(int argc,char** argv){
      <<entry.summary.unreadable<<','<<entry.summary.selectedMatches<<',';
     for(size_t j=0;j<entry.summary.sampledIds.size();++j){
      if(j)out<<';';
-     out<<entry.sampledIds[j];
+     out<<entry.summary.sampledIds[j];
     }
     out<<'\n';
    }
