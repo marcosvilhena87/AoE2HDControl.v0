@@ -1,4 +1,5 @@
 #include "UnitCollectionDiscovery.h"
+#include <utility>
 namespace aoe2hd {
 UnitCollectionReport InspectUnitCollections(
  const MemoryReader& memory,const WorldResult& world,
