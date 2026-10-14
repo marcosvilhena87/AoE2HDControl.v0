@@ -642,3 +642,14 @@ Focus the PowerShell console and press \`w\` after selecting a **visibly working
 Accepted commands are \`gathering 0 0\`, \`gathering 5 0\`, \`stopped 5 1\`, \`resumed 5 0\`, \`deposited 0 0\`, \`reassigned 0 0\`, followed by \`q\` to write the results. Values are HUD labels, not automatic detection. The third field indicates *manually stopped* status, and only \`stopped\` uses 1. Keep the same villager selected. HUD load is validated in the observed 0–10 range; games/bonuses with higher limits need later adaptation. Repeated samples, especially at different nonzero loads and stopped-with-preserved-load, are more informative than only 0 and 10. Reassignment may change type definition between snapshots, which is recorded but not automatically mapped to a new role.
 
 Two CSVs are written: \`<prefix>_fields.csv\` (all raw 32-bit entity fields and corresponding finite float interpretations) and \`<prefix>_candidates.csv\` (ranking by match to HUD load as an IEEE754 float, plus preservation across adjacent working-to-stopped snapshots). Each offset is **only a hypothesis**. It is possible that the true load is represented as an integer, lives beyond 0x400 bytes, or belongs to another object; a low/empty candidate ranking does not prove that the HUD load is inaccessible. No memory writes or automated game commands are performed. Existing output with the same prefix is overwritten.
+
+
+### Continuous GatheringProgressDetector — experimental carry load (+0x48)
+
+The \`aoe2hd_gathering_progress.exe\` program reads the **candidate** carried-resource quantity as an IEEE754 float at \`Entity+0x48\`, every ~250 ms for the first selected local villager (candidate individual ID and entity pointer locked). It checks the selected entity and its definition before/after the read; failed reads are not treated as zero load. The candidate offset matched a previous manually labelled wood-gathering capture, but still requires validation on other villagers and resources.
+
+\`\`\`powershell
+.\build2026\Release\aoe2hd_gathering_progress.exe --csv aoe2hd_gathering_progress.csv
+\`\`\`
+
+The CSV records time, entity ID and pointer, definition reference, raw 32-bit value, float load, previous float load, delta, and event. Events: \`baseline\`, \`gathering_progress\` (positive delta), \`no_progress_observed\`, \`load_decreased\`, \`load_cleared_cause_unknown\`, \`identity_or_role_changed\`, or a read/selection loss. A load increase is evidence of collection **during the sampling interval**, not a definitive instantaneous non-idle flag. Unchanged load never proves idleness. A drop to zero is not automatically assigned to deposit, reassignment, or another cause. Comparisons are reset after selection loss or definition changes. The monitor is read-only and ends with Ctrl+C; ensure the villager remains selected. It overwrites the CSV at startup.
