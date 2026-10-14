@@ -1,6 +1,7 @@
 #include "PlayerUnitEntryProbe.h"
 #include <cassert>
 #include <map>
+#include <string>
 struct Mock:aoe2hd::MemoryReader{
  std::map<uint32_t,uint8_t> b;
  void put(uint32_t a,uint32_t v){for(int i=0;i<4;++i)b[a+i]=static_cast<uint8_t>(v>>(i*8));}
