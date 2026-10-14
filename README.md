@@ -585,3 +585,14 @@ Run \`aoe2hd_cross_player_type.exe\` with **current-session** object addresses o
 ### Selected telemetry: experimental type candidates
 
 `aoe2hd_selected_telemetry.exe` now appends `type_ref_stable`, `type_candidates_readable`, `type_candidate_a_08`, and `type_candidate_b_0c` columns after the original CSV columns. It reads candidate fields from the structure pointed to by `Entity+0x0C`, rechecks that reference and the selection pointers, and leaves candidate values **blank** if unavailable. The original ownership, entity ID and HP capture remain available even if optional candidate-field reads fail. Candidate A/B are unverified; user-provided names such as villager, scout and town center are experimental ground truth, not automatically assigned by this reader. Start with a new CSV filename to preserve earlier captures.
+
+
+### Controlled single-villager task transitions
+
+Windows executable \`aoe2hd_villager_task_experiment.exe\` follows the first **locally owned, valid selected** entity candidate ID and logs definition-reference and candidate type transitions at ~250 ms intervals. It does not switch the locked entity when selection changes. The operator marks task orders in the **PowerShell console** with keys (the console must have keyboard focus): \`0\` baseline, \`1\` food, \`2\` wood, \`3\` gold, \`4\` stone, \`5\` stop, \`q\` quit. For each change, return to the console immediately after issuing the command and press the appropriate digit; this measures **annotation time**, not an exact game command timestamp. The monitor does not perform game actions or infer tasks. It writes \`elapsed_ms,event,task_marker,locked_entity_id,object,entity_id,owner,status,definition_ref,type_ref_stable,type_candidates_readable,type_a,type_b,hp\`.
+
+\`\`\`powershell
+.\build2026\Release\aoe2hd_villager_task_experiment.exe --csv aoe2hd_villager_task_transitions.csv
+\`\`\`
+
+Select a villager, press \`0\` in the console, order food, return to console and press \`1\`; repeat with wood (\`2\`), gold (\`3\`), stone (\`4\`) and food (\`1\`) again. Do not rely on exact timing of task changes relative to manually annotated keys. Keep the same villager selected where possible; the tool records transitions and selection status changes, and does not silently relock. Existing output at the selected path is overwritten. The candidate values are experimental.
