@@ -1,5 +1,4 @@
-#include "PlayerUnitListDiscovery.h"
-#include "PlayerUnitEntryProbe.h"
+#include "UnitCollectionDiscovery.h"
 #include "SelectedTelemetryReader.h"
 #include "ProcessMemory.h"
 #include <chrono>
@@ -34,23 +33,23 @@ int main(int argc,char** argv){
   if(local){
    auto selected=aoe2hd::ReadSelectedTelemetry(mem,world);
    uint32_t anchor=selected.status==aoe2hd::TelemetryStatus::Ready?selected.object:0;
-   auto candidates=aoe2hd::DiscoverUnitVectors(mem,world,0x800,512);
-   auto result=aoe2hd::ProbePlayerUnitLists(mem,world,candidates,anchor,64);
+   auto report=aoe2hd::InspectUnitCollections(mem,world,anchor,0x800,512,64);
+   const auto& result=report.observations;
    auto ms=std::chrono::duration_cast<std::chrono::milliseconds>(
      std::chrono::steady_clock::now()-started).count();
    for(const auto& entry:result){
-    for(const auto& ev:aoe2hd::ProbeUnitEntryEvidence(mem,world,entry.vector,anchor)){
-     detail<<ms<<','<<entry.vector.source<<','<<entry.vector.offset<<','
+    for(const auto& ev:entry.entries){
+     detail<<ms<<','<<entry.summary.vector.source<<','<<entry.vector.offset<<','
       <<entry.vector.stride<<','<<ev.index<<','<<ev.word<<','
       <<ev.value<<','<<ev.target<<','<<ev.entityId<<','
       <<ev.owner<<','<<ev.kind<<','<<ev.selectedMatch<<','<<ev.localOwner<<'\n';
     }
-    const auto& v=entry.vector;
+    const auto& v=entry.summary.vector;
     out<<ms<<','<<world.snapshot.world<<','<<local->object<<','
      <<v.source<<','<<v.offset<<','<<v.stride<<','<<v.count<<','
-     <<entry.sampled<<','<<entry.localMatches<<','<<entry.otherMatches<<','
-     <<entry.unreadable<<','<<entry.selectedMatches<<',';
-    for(size_t j=0;j<entry.sampledIds.size();++j){
+     <<entry.summary.sampled<<','<<entry.summary.localMatches<<','<<entry.summary.otherMatches<<','
+     <<entry.summary.unreadable<<','<<entry.summary.selectedMatches<<',';
+    for(size_t j=0;j<entry.summary.sampledIds.size();++j){
      if(j)out<<';';
      out<<entry.sampledIds[j];
     }
@@ -58,7 +57,7 @@ int main(int argc,char** argv){
    }
    out.flush();detail.flush();
    if(!result.empty()){
-    const auto& best=result.front();
+    const auto& best=result.front().summary;
     std::cout<<"["<<ms<<" ms] candidates="<<result.size()<<" best="
      <<best.vector.source<<"+0x"<<std::hex<<best.vector.offset<<std::dec
      <<" count="<<best.vector.count<<" local="<<best.localMatches
