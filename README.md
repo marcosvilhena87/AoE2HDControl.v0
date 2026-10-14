@@ -618,3 +618,14 @@ Read-only sampling approximately every 250 ms logs definition-pointer and type-c
 \`\`\`
 
 It writes \`<prefix>_fields.csv\` for the three raw snapshots and \`<prefix>_candidates.csv\` listing every offset with \`changed_on_stop\` and \`reversed_on_resume\` flags. A reversed field is **only a discovery candidate**, not proof of an action flag; positions, target pointers, timers, and other values can exhibit the same pattern. Repeat with multiple villagers and rounds before considering an action-state address. The CLI is read-only; it does not issue game commands, auto-read HUD state, or detect the exact time of an action change. Never select another unit during the three snapshots. Output is overwritten at the specified prefix.
+
+
+### IdleVillagerDiscovery v1 — game HUD idle-button evidence
+
+The Windows read-only \`aoe2hd_idle_villager_discovery.exe\` samples 0x400 bytes of the **currently selected local entity** with before/after identity and definition checks. Its labels are manual, not inferred from memory:
+
+\`\`\`powershell
+.\build2026\Release\aoe2hd_idle_villager_discovery.exe --prefix aoe2hd_idle_villager
+\`\`\`
+
+Focus the PowerShell console and press \`w\` after selecting a **visibly working** villager; press \`i\` only after clicking the **Next Idle Villager** button in the game's HUD and verifying which villager is selected. Optionally press \`s\` for a manually stopped villager (recorded separately, excluded from the automatic working-vs-idle comparison). Repeat with several villagers, ideally testing the **same individual** while working and then after becoming idle. \`q\` ends and writes \`<prefix>_fields.csv\` and \`<prefix>_candidates.csv\`. The latter marks offsets whose observed working and idle-button-selected values are disjoint; these are **candidates**, not established idle flags. Different IDs, role definitions, target pointers, or timestamps can cause false correlations. The experiment neither clicks HUD buttons nor reads the game's idle list directly. Existing output files with the same prefix are overwritten.
