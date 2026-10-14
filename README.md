@@ -678,3 +678,15 @@ Output adds `selection_status`, `lock_status` and `type_a` to distinguish reject
 
 The existing `aoe2hd_gathering_activity.exe` additionally logs `observed_ms`, `progress_ms`, `no_progress_ms`, `current_no_progress_ms`, `longest_no_progress_ms`, `collected_units`, `active_rate_per_s`, and `progress_fraction`. Every successfully comparable adjacent sample contributes its elapsed time to either progress (positive candidate load delta) or no-progress (zero or negative delta). The total collected amount is the sum of positive increments; this is **not** the net economy delivered to stockpiles. The observed progress fraction is progress time divided by comparable observed time, **not** full economic efficiency; carrying a full load and walking to a deposit point count as no progress. Gaps over 1 second, loss of selection and entity or definition changes break comparison continuity to avoid counting unsupported durations. The metrics accumulate across valid runs within this monitor session; the current no-progress streak resets at interruptions. The original rolling-window state remains unchanged. Tests cover progress, pauses, resume, data gaps, identity transitions and reset.
 
+
+
+### PlayerUnitListDiscovery v1 — candidate collection ranking
+
+`aoe2hd_player_unit_list_discovery.exe` reuses `DiscoverUnitVectors` to search bounded candidate vector triplets in the local player and world roots (0x800-byte scan, up to 512 entries), then samples up to 64 candidate entries and attempts to decode the target entity's individual ID and owner. For each possible collection, it counts matching local and other-player owners, unreadable targets, and optionally whether the *currently selected* object's address appears in the sampled list. It sorts candidates by selected-address match and local-owner count. This is strictly **experimental**: finding matching owners does not prove the container is the authoritative player unit list. Evidence is stronger if multiple known selected units appear in the same candidate across a match, and changes correlate with unit creation/death.
+
+```powershell
+.\build2026\Release\aoe2hd_player_unit_list_discovery.exe --csv aoe2hd_player_unit_lists.csv
+```
+
+Select individual known units during the capture to provide anchor evidence, but the scan continues even when nothing is selected. Ctrl+C stops. Each CSV row contains the source root, offset, stride, candidate entry count, sample counts, owner matches, selected-object matches and sampled local entity IDs separated by semicolons. Existing CSV is overwritten. The tool performs read-only memory operations and does not manipulate or select units. Positive results remain candidates until independently validated. Unit coordinates and full enumeration are **not** claimed to be mapped by this experiment.
+
