@@ -1,4 +1,6 @@
 #include "GatheringActivityMonitor.h"
+#include "VillagerSelectionGuard.h"
+#include "SelectedTelemetryReader.h"
 #include "ProcessMemory.h"
 #include <chrono>
 #include <fstream>
@@ -14,33 +16,55 @@ int main(int argc,char** argv){
  if(!mem.open()){std::cerr<<"AoK HD.exe not found\n";return 2;}
  std::ofstream out(csv,std::ios::trunc);
  if(!out){std::cerr<<"Cannot write CSV\n";return 2;}
- out<<"elapsed_ms,entity_id,object,definition_ref,load,window_ms,window_gain,complete_window,activity_evidence\n";
+ out<<"elapsed_ms,selection_status,lock_status,entity_id,object,definition_ref,type_a,load,window_ms,window_gain,complete_window,activity_evidence\n";
  aoe2hd::GatheringActivityMonitor monitor(2000);
  uint32_t locked=0,lockedObject=0;
  auto started=std::chrono::steady_clock::now();
- aoe2hd::GatheringActivity last=aoe2hd::GatheringActivity::Unknown;
- std::cout<<"Read-only GatheringActivityMonitor v2; Ctrl+C to end.\n"
-  <<"Select ONE local villager. Window 2000 ms; full load threshold 10 is experimental.\n"
-  <<"No recent progress does NOT mean idle.\n";
+ std::string lastStatus;
+ std::cout<<"GatheringActivityMonitor v2.1 (read-only). Ctrl+C to end.\n"
+ <<"Select ONE local villager. Unsupported candidate type IDs are rejected before lock.\n"
+ <<"After lock, losing/changing selection pauses tracking; restart to choose another villager.\n"
+ <<"No recent progress does NOT mean idle.\n";
  while(mem.isAlive()){
-  auto s=aoe2hd::ReadSelectedVillagerCarry(mem,aoe2hd::ReadWorld(mem,mem.moduleBase()));
-  uint64_t elapsed=static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+  const auto world=aoe2hd::ReadWorld(mem,mem.moduleBase());
+  const auto selected=aoe2hd::ReadSelectedTelemetry(mem,world);
+  const auto guard=aoe2hd::CheckVillagerCandidate(selected);
+  auto s=aoe2hd::CarryReading{};
+  std::string status=aoe2hd::VillagerSelectionStatusName(guard);
+  if(guard==aoe2hd::VillagerSelectionStatus::AcceptedCandidate){
+   if(locked&&(selected.identity.candidateId!=locked||selected.object!=lockedObject))
+    status="different_entity_selected";
+   else {
+    s=aoe2hd::ReadSelectedVillagerCarry(mem,world);
+    if(!s.valid)status="carry_read_failed_or_transition";
+    else if(!locked){
+     locked=s.id;lockedObject=s.object;
+     std::cout<<"Locked villager candidate id="<<locked<<" object="<<lockedObject
+      <<" typeA="<<selected.typeCandidateA<<'\n';
+    }
+   }
+  }
+  const uint64_t elapsed=static_cast<uint64_t>(
+   std::chrono::duration_cast<std::chrono::milliseconds>(
    std::chrono::steady_clock::now()-started).count());
-  if(s.valid&&!locked){locked=s.id;lockedObject=s.object;
-   std::cout<<"Locked id="<<locked<<" object="<<lockedObject<<'\n';}
-  if(s.valid&&(s.id!=locked||s.object!=lockedObject))s.valid=false;
-  auto v=monitor.Observe(elapsed,s);
-  out<<elapsed<<',';
-  if(s.valid)out<<s.id<<','<<s.object<<','<<s.definition<<','
-    <<std::setprecision(9)<<s.load;
+  const std::string lock=locked?(s.valid?"tracking":"locked_waiting_for_original"):"unlocked";
+  const auto activity=monitor.Observe(elapsed,s);
+  out<<elapsed<<','<<status<<','<<lock<<',';
+  if(selected.status==aoe2hd::TelemetryStatus::Ready)
+   out<<selected.identity.candidateId<<','<<selected.object<<','
+      <<selected.identity.candidateTypeRef<<',';
   else out<<",,,";
-  out<<','<<v.windowMs<<','<<v.windowGain<<','<<v.completeWindow<<','
-    <<aoe2hd::GatheringActivityName(v.state)<<'\n';
+  if(selected.typeCandidatesReadable)out<<selected.typeCandidateA;
+  out<<',';
+  if(s.valid)out<<std::setprecision(9)<<s.load;
+  out<<','<<activity.windowMs<<','<<activity.windowGain<<','
+   <<activity.completeWindow<<','<<aoe2hd::GatheringActivityName(activity.state)<<'\n';
   out.flush();
-  if(v.state!=last){
-   std::cout<<"["<<elapsed<<" ms] "<<aoe2hd::GatheringActivityName(v.state);
-   if(s.valid)std::cout<<" load="<<s.load<<" gain="<<v.windowGain;
-   std::cout<<'\n';last=v.state;
+  std::string combined=status+"/"+lock+"/"+aoe2hd::GatheringActivityName(activity.state);
+  if(combined!=lastStatus){
+   std::cout<<"["<<elapsed<<" ms] "<<combined;
+   if(s.valid)std::cout<<" load="<<s.load<<" gain="<<activity.windowGain;
+   std::cout<<'\n';lastStatus=combined;
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(250));
  }
