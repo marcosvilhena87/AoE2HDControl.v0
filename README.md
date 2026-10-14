@@ -653,3 +653,15 @@ The \`aoe2hd_gathering_progress.exe\` program reads the **candidate** carried-re
 \`\`\`
 
 The CSV records time, entity ID and pointer, definition reference, raw 32-bit value, float load, previous float load, delta, and event. Events: \`baseline\`, \`gathering_progress\` (positive delta), \`no_progress_observed\`, \`load_decreased\`, \`load_cleared_cause_unknown\`, \`identity_or_role_changed\`, or a read/selection loss. A load increase is evidence of collection **during the sampling interval**, not a definitive instantaneous non-idle flag. Unchanged load never proves idleness. A drop to zero is not automatically assigned to deposit, reassignment, or another cause. Comparisons are reset after selection loss or definition changes. The monitor is read-only and ends with Ctrl+C; ensure the villager remains selected. It overwrites the CSV at startup.
+
+
+### GatheringActivityMonitor v2 (read-only, sliding window)
+
+`aoe2hd_gathering_activity.exe` follows the first selected **local** villager (individual ID + object address locked), samples experimental `Entity+0x48` every ~250 ms and reports evidence from a rolling 2-second window. The code preserves a boundary sample to establish full-window coverage. Use:
+
+```powershell
+.\build2026\Release\aoe2hd_gathering_activity.exe --csv aoe2hd_gathering_activity.csv
+```
+
+Output columns: elapsed time, candidate entity ID, object, definition pointer, float load, window duration, cumulative positive increments, complete-window flag, activity evidence. States: `activity_unknown` (including incomplete coverage / unreadable selection), `recent_gathering_progress`, `no_recent_progress`, `capacity_reached` (experimental threshold 10), and `load_cleared_cause_unknown`. A positive increase establishes progress **during** the interval only. No change is **not** proof of idleness. Load clearing does not prove deposit, and movement or non-gathering actions are not inferred. Switching definition, losing selection, or selecting a different unit resets evidence. End with Ctrl+C. Existing CSV is overwritten. The threshold may not apply with civilization bonuses, technologies or other contexts; validate on other resources/villagers.
+
