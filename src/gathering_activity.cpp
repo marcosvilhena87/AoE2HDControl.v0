@@ -1,4 +1,5 @@
 #include "GatheringActivityMonitor.h"
+#include "GatheringProductivity.h"
 #include "VillagerSelectionGuard.h"
 #include "SelectedTelemetryReader.h"
 #include "ProcessMemory.h"
@@ -16,12 +17,13 @@ int main(int argc,char** argv){
  if(!mem.open()){std::cerr<<"AoK HD.exe not found\n";return 2;}
  std::ofstream out(csv,std::ios::trunc);
  if(!out){std::cerr<<"Cannot write CSV\n";return 2;}
- out<<"elapsed_ms,selection_status,lock_status,entity_id,object,definition_ref,type_a,load,window_ms,window_gain,complete_window,activity_evidence\n";
+ out<<"elapsed_ms,selection_status,lock_status,entity_id,object,definition_ref,type_a,load,window_ms,window_gain,complete_window,activity_evidence,observed_ms,progress_ms,no_progress_ms,current_no_progress_ms,longest_no_progress_ms,collected_units,active_rate_per_s,progress_fraction\n";
  aoe2hd::GatheringActivityMonitor monitor(2000);
+ aoe2hd::GatheringProductivityTracker productivity;
  uint32_t locked=0,lockedObject=0;
  auto started=std::chrono::steady_clock::now();
  std::string lastStatus;
- std::cout<<"GatheringActivityMonitor v2.1 (read-only). Ctrl+C to end.\n"
+ std::cout<<"GatheringActivityMonitor v2.2 (read-only). Ctrl+C to end.\n"
  <<"Select ONE local villager. Unsupported candidate type IDs are rejected before lock.\n"
  <<"After lock, losing/changing selection pauses tracking; restart to choose another villager.\n"
  <<"No recent progress does NOT mean idle.\n";
@@ -49,6 +51,7 @@ int main(int argc,char** argv){
    std::chrono::steady_clock::now()-started).count());
   const std::string lock=locked?(s.valid?"tracking":"locked_waiting_for_original"):"unlocked";
   const auto activity=monitor.Observe(elapsed,s);
+  const auto metrics=productivity.Observe(elapsed,s);
   out<<elapsed<<','<<status<<','<<lock<<',';
   if(selected.status==aoe2hd::TelemetryStatus::Ready)
    out<<selected.identity.candidateId<<','<<selected.object<<','
@@ -58,7 +61,11 @@ int main(int argc,char** argv){
   out<<',';
   if(s.valid)out<<std::setprecision(9)<<s.load;
   out<<','<<activity.windowMs<<','<<activity.windowGain<<','
-   <<activity.completeWindow<<','<<aoe2hd::GatheringActivityName(activity.state)<<'\n';
+   <<activity.completeWindow<<','<<aoe2hd::GatheringActivityName(activity.state)
+   <<','<<metrics.observedMs<<','<<metrics.progressMs<<','<<metrics.noProgressMs
+   <<','<<metrics.currentNoProgressMs<<','<<metrics.longestNoProgressMs
+   <<','<<metrics.collected<<','<<metrics.ratePerActiveSecond
+   <<','<<metrics.progressFraction<<'\n';
   out.flush();
   std::string combined=status+"/"+lock+"/"+aoe2hd::GatheringActivityName(activity.state);
   if(combined!=lastStatus){
