@@ -25,6 +25,9 @@ int main(int argc,char** argv){
  std::ofstream out(csv,std::ios::trunc);
  if(!out){std::cerr<<"Cannot create CSV\n";return 2;}
  out<<"scan_id,entity_id,entity_object,reference_address,region_base,region_kind,classification\n";
+ std::ofstream clusters("aoe2hd_reference_clusters.csv",std::ios::trunc);
+ if(!clusters){std::cerr<<"Cannot create clusters CSV\n";return 2;}
+ clusters<<"scan_id,group_base,distinct_ids,entity_ids\n";
  std::signal(SIGINT,stop);
  std::map<uint32_t,uint32_t> observed;
  uint32_t previousObject=0,scanId=0;
@@ -73,8 +76,19 @@ int main(int argc,char** argv){
     }
     out.flush();
     unsigned groups=0;
-    for(const auto& group:nearby)
-     if(group.second.size()>=2)++groups;
+    for(const auto& group:nearby){
+     if(group.second.size()<2)continue;
+     ++groups;
+     clusters<<scanId<<','<<static_cast<uint64_t>(group.first)*256<<','
+      <<group.second.size()<<',';
+     bool first=true;
+     for(uint32_t id:group.second){
+      if(!first)clusters<<';';
+      clusters<<id;first=false;
+     }
+     clusters<<'\n';
+    }
+    clusters.flush();
     std::cout<<"Scan "<<scanId<<" complete: read "<<bytesRead/1048576
      <<" MiB, hits="<<hitCount<<", shared 256-byte groups="<<groups
      <<", failed chunks="<<failedChunks<<'\n';
