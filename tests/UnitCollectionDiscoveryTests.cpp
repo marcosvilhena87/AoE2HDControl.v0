@@ -31,12 +31,19 @@ int main(){
  memory.put(0x20028,begin+4);memory.put(begin,unit);
  for(unsigned i=0;i<5;++i)memory.put(unit+4*i,0);
  memory.put(unit+8,2234);memory.put(unit+16,0x20000);
- auto result=aoe2hd::InspectUnitCollections(memory,world,unit,0x40,16,16);
+ // Provide a plausible module vtable for independent structural evidence.
+ memory.put(unit,0x00500000);
+ auto result=aoe2hd::InspectUnitCollections(memory,world,unit,0x40,16,16,0x00400000);
  assert(result.observations.size()==1);
  const auto& o=result.observations[0];
  assert(o.summary.selectedMatches==1);
  assert(o.summary.localMatches==1);
  assert(!o.entries.empty());
  assert(o.summary.vector.begin==begin);
+ assert(o.pointers.sampled==1);
+ assert(o.pointers.nonzero==1);
+ assert(o.pointers.readableTargets==1);
+ assert(o.pointers.plausibleVtables==1);
+ assert(o.pointers.distinctTargets==1);
  assert(aoe2hd::InspectUnitCollections(memory,aoe2hd::WorldResult{}).observations.empty());
 }

@@ -18,7 +18,7 @@ int main(int argc,char** argv){
  if(!mem.open()){std::cerr<<"AoK HD.exe not found\n";return 2;}
  std::ofstream out(path,std::ios::trunc);
  if(!out){std::cerr<<"Cannot create CSV\n";return 2;}
- out<<"elapsed_ms,world,player,source,offset,stride,entries,sampled,local_matches,other_matches,unreadable,selected_matches,ids_sample\n";
+ out<<"elapsed_ms,world,player,source,offset,stride,entries,sampled,local_matches,other_matches,unreadable,selected_matches,selection_status,nonzero,readable_targets,plausible_vtables,distinct_targets,first_vtable,matching_vtables,ids_sample\n";
  std::ofstream detail("aoe2hd_player_unit_entry_evidence.csv",std::ios::trunc);
  if(!detail){std::cerr<<"Cannot create entry evidence CSV\n";return 2;}
  detail<<"elapsed_ms,source,offset,stride,index,word,value,target,entity_id,owner,kind,selected_match,local_owner\n";
@@ -33,7 +33,7 @@ int main(int argc,char** argv){
   if(local){
    auto selected=aoe2hd::ReadSelectedTelemetry(mem,world);
    uint32_t anchor=selected.status==aoe2hd::TelemetryStatus::Ready?selected.object:0;
-   auto report=aoe2hd::InspectUnitCollections(mem,world,anchor,0x800,512,64);
+   auto report=aoe2hd::InspectUnitCollections(mem,world,anchor,0x800,512,64,mem.moduleBase());
    const auto& result=report.observations;
    auto ms=std::chrono::duration_cast<std::chrono::milliseconds>(
      std::chrono::steady_clock::now()-started).count();
@@ -48,7 +48,11 @@ int main(int argc,char** argv){
     out<<ms<<','<<world.snapshot.world<<','<<local->object<<','
      <<v.source<<','<<v.offset<<','<<v.stride<<','<<v.count<<','
      <<entry.summary.sampled<<','<<entry.summary.localMatches<<','<<entry.summary.otherMatches<<','
-     <<entry.summary.unreadable<<','<<entry.summary.selectedMatches<<',';
+     <<entry.summary.unreadable<<','<<entry.summary.selectedMatches<<','
+     <<aoe2hd::TelemetryStatusName(selected.status)<<','
+     <<entry.pointers.nonzero<<','<<entry.pointers.readableTargets<<','
+     <<entry.pointers.plausibleVtables<<','<<entry.pointers.distinctTargets<<','
+     <<entry.pointers.firstVtable<<','<<entry.pointers.matchingVtables<<',';
     for(size_t j=0;j<entry.summary.sampledIds.size();++j){
      if(j)out<<';';
      out<<entry.summary.sampledIds[j];
@@ -61,7 +65,10 @@ int main(int argc,char** argv){
     std::cout<<"["<<ms<<" ms] candidates="<<result.size()<<" best="
      <<best.vector.source<<"+0x"<<std::hex<<best.vector.offset<<std::dec
      <<" count="<<best.vector.count<<" local="<<best.localMatches
-     <<" selected="<<best.selectedMatches<<'\n';
+     <<" selected="<<best.selectedMatches
+     <<" selection_status="<<aoe2hd::TelemetryStatusName(selected.status)
+     <<" readable="<<result.front().pointers.readableTargets
+     <<" vtables="<<result.front().pointers.plausibleVtables<<'\n';
    }else std::cout<<"["<<ms<<" ms] no vector candidates in scanned roots\n";
   }
   for(int n=0;n<4&&!stopRequested;++n)
