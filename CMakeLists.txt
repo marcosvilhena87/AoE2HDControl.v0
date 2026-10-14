@@ -3,7 +3,7 @@ project(AoE2HDControl LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(aoe2hd_world src/WorldReader.cpp src/WorldMonitor.cpp src/ResourceReader.cpp src/EconomyMonitor.cpp src/PopulationReader.cpp src/GameplayReadinessMonitor.cpp src/DerivedEventDetector.cpp src/UnitDiscovery.cpp src/UnitContentTracker.cpp src/UnitPointerProbe.cpp src/ObjectFieldSampler.cpp src/ProductionProgressProbe.cpp src/AbsoluteProgressMonitor.cpp src/ConstructionProgressMonitor.cpp src/ConstructionPointerDiscovery.cpp src/EntityHealthMonitor.cpp src/SelectionPointerMonitor.cpp src/EntityTypeDiscovery.cpp src/EntityIdentityReader.cpp src/SelectedTelemetryReader.cpp src/EntityTypeResolver.cpp src/CrossPlayerTypeExperiment.cpp src/VillagerObservationLabels.cpp src/VillagerActionDiscovery.cpp src/IdleVillagerDiscovery.cpp src/VillagerCarryDiscovery.cpp src/GatheringProgressDetector.cpp src/GatheringActivityMonitor.cpp)
+add_library(aoe2hd_world src/WorldReader.cpp src/WorldMonitor.cpp src/ResourceReader.cpp src/EconomyMonitor.cpp src/PopulationReader.cpp src/GameplayReadinessMonitor.cpp src/DerivedEventDetector.cpp src/UnitDiscovery.cpp src/UnitContentTracker.cpp src/UnitPointerProbe.cpp src/ObjectFieldSampler.cpp src/ProductionProgressProbe.cpp src/AbsoluteProgressMonitor.cpp src/ConstructionProgressMonitor.cpp src/ConstructionPointerDiscovery.cpp src/EntityHealthMonitor.cpp src/SelectionPointerMonitor.cpp src/EntityTypeDiscovery.cpp src/EntityIdentityReader.cpp src/SelectedTelemetryReader.cpp src/EntityTypeResolver.cpp src/CrossPlayerTypeExperiment.cpp src/VillagerObservationLabels.cpp src/VillagerActionDiscovery.cpp src/IdleVillagerDiscovery.cpp src/VillagerCarryDiscovery.cpp src/GatheringProgressDetector.cpp src/GatheringActivityMonitor.cpp src/VillagerSelectionGuard.cpp)
 target_include_directories(aoe2hd_world PUBLIC include)
 
 if(WIN32)
@@ -155,6 +155,9 @@ if(BUILD_TESTING)
   add_executable(gathering_activity_monitor_tests tests/GatheringActivityMonitorTests.cpp)
   target_link_libraries(gathering_activity_monitor_tests PRIVATE aoe2hd_world)
   add_test(NAME gathering_activity_monitor_tests COMMAND gathering_activity_monitor_tests)
+  add_executable(villager_selection_guard_tests tests/VillagerSelectionGuardTests.cpp)
+  target_link_libraries(villager_selection_guard_tests PRIVATE aoe2hd_world)
+  add_test(NAME villager_selection_guard_tests COMMAND villager_selection_guard_tests)
 endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
