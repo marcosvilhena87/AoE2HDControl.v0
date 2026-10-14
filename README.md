@@ -708,3 +708,16 @@ The existing `aoe2hd_player_unit_list_discovery.exe` now also writes `aoe2hd_pla
 
 Keep the program running while selecting *individual* villagers, military units and buildings in succession, leaving several seconds per unit, then Ctrl+C. The program starts a new group when the selected object address changes. CSV fields: `elapsed_ms,entity_id,entity_object,source,region_base,reference_address,relative_offset`. Repeated rows at the same location for different entities may indicate an updating selection field; **only multiple distinct entity references in a stable nearby container** would support a general unit list hypothesis. A selected-only field is not a player unit list. This is an experimental first reverse search, not full enumeration.
 
+
+
+### ProcessReferenceDiscovery v2 — process-wide bounded multi-anchor search
+
+The new Windows executable `aoe2hd_process_reference_discovery.exe` scans readable committed memory regions of `AoK HD.exe`, selected by `VirtualQueryEx`, for the **exact 32-bit addresses** of previously individually selected entities. It uses a **256 MiB maximum readable-memory budget per scan**, scans blocks up to 64 KiB, retries failed large reads in 4 KiB blocks, and performs no memory writes. Each change of selected object triggers a new scan using all anchors observed so far in that execution. Collection references should be investigated only when several different unit pointers occur **simultaneously at distinct nearby addresses**; changing selection fields alone are not evidence of unit-list enumeration. Individual anchor addresses can become stale following unit destruction, game reload or address reuse: restart for a new game.
+
+```powershell
+.\build2026\Release\aoe2hd_process_reference_discovery.exe --csv aoe2hd_process_references.csv
+```
+
+CSV columns: `scan_id,entity_id,entity_object,reference_address,region_base,region_kind,classification`. Known selection fields (`LocalPlayer+0x15C` and `+0x160`) are explicitly classified `selection_slot`; all others are `other_reference` hypotheses, not proven list pointers. Console reports scanned MiB, hit count, unreadable chunks and the number of 256-byte address groups containing pointers to multiple different IDs. The CSV is overwritten at launch. Choose a few distinct units, allowing the scan to finish after each new selection; press Ctrl+C to stop. A zero-hit result is inconclusive since scan budget and protection filters intentionally limit coverage. Windows CMake/CTest build verification remains necessary.
+
+The unit-enumeration roadmap takes priority over further economic metric development until a reliably validated list of entities is available.
