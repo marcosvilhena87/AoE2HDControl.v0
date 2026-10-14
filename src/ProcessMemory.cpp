@@ -5,8 +5,42 @@
 #include "WorldReader.h"
 #include "ProcessMemory.h"
 #include <cwchar>
+#include <algorithm>
 
 namespace aoe2hd {
+std::vector<ReadableMemoryRegion> ProcessMemory::readableRegions(uint64_t maxBytes) const {
+ std::vector<ReadableMemoryRegion> regions;
+ if(!handle_||!maxBytes)return regions;
+ uint64_t address=0,remaining=maxBytes;
+ const uint64_t limit=0x100000000ULL;
+ while(address<limit&&remaining>=4){
+  MEMORY_BASIC_INFORMATION info{};
+  SIZE_T got=VirtualQueryEx(static_cast<HANDLE>(handle_),
+   reinterpret_cast<LPCVOID>(static_cast<uintptr_t>(address)),&info,sizeof(info));
+  if(!got)break;
+  uint64_t base=reinterpret_cast<uintptr_t>(info.BaseAddress);
+  uint64_t end=base+static_cast<uint64_t>(info.RegionSize);
+  if(end<=address)break;
+  const DWORD protect=info.Protect;
+  const bool accessible=info.State==MEM_COMMIT&&!(protect&PAGE_GUARD)&&
+   !(protect&PAGE_NOACCESS)&&
+   ((protect&0xffu)==PAGE_READONLY||(protect&0xffu)==PAGE_READWRITE||
+    (protect&0xffu)==PAGE_WRITECOPY||(protect&0xffu)==PAGE_EXECUTE_READ||
+    (protect&0xffu)==PAGE_EXECUTE_READWRITE||(protect&0xffu)==PAGE_EXECUTE_WRITECOPY);
+  if(accessible&&base<limit){
+   uint64_t size=(std::min)(end,limit)-base;
+   size=(std::min)(size,remaining);
+   size&=~uint64_t(3);
+   if(size>=4){
+    regions.push_back({static_cast<uint32_t>(base),static_cast<uint32_t>(size),
+     static_cast<uint32_t>(protect),static_cast<uint32_t>(info.Type)});
+    remaining-=size;
+   }
+  }
+  address=end;
+ }
+ return regions;
+}
 ProcessMemory::~ProcessMemory() {
     if (handle_) CloseHandle(static_cast<HANDLE>(handle_));
 }
