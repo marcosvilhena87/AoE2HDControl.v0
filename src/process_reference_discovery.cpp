@@ -1,13 +1,16 @@
 #include "ProcessMemory.h"
 #include "ProcessReferenceScanner.h"
 #include "SelectedTelemetryReader.h"
+#include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <csignal>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <set>
 #include <string>
+#include <thread>
 #include <vector>
 namespace {
 volatile std::sig_atomic_t stopped=0;
