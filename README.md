@@ -696,3 +696,15 @@ Select individual known units during the capture to provide anchor evidence, but
 
 The existing `aoe2hd_player_unit_list_discovery.exe` now also writes `aoe2hd_player_unit_entry_evidence.csv` in the current working directory (overwritten). For every accepted candidate vector, it inspects **all entries** up to the existing 1024-entry guard, treating stride 8 as two independent 32-bit words. Each aligned plausible pointer is tested as a direct entity reference and via one intermediate pointer hop (the intermediate object's first two dwords). Only a match to the selected entity's **exact object address** or a readable identity with the **local player's owner pointer** is exported. Output fields include `source,offset,stride,index,word,value,target,entity_id,owner,kind,selected_match,local_owner`. The `kind` is `direct`, `indirect` or `direct_anchor` (the last is an address equality, not proof of a readable entity). No arbitrary-depth traversal is performed; all reads are bounded and read-only. The original summary CSV is preserved and may still use a smaller representative sample. Duplicate rows can appear across time; prioritize repeated paths whose entries are verified against multiple known selected units. **Zero matches is inconclusive**: different container layouts, larger structures, or different intermediate-field offsets remain possible.
 
+
+
+### EntityReferenceDiscovery v1 — reverse lookup from selected entities
+
+`aoe2hd_entity_reference_discovery.exe` uses a live, individually selected entity's object pointer as an **exact-match anchor**. It performs read-only 32-bit aligned scans in bounded **16 KiB** ranges starting from the validated World and LocalPlayer objects, plus the backing-buffer starts of previously discovered candidate vectors. It logs each reference's absolute and relative location in a CSV. It intentionally does **not** scan the entire process address space. Thus no matches are not proof that a unit collection does not exist. The CSV is overwritten at program start. Candidate buffer and root ranges may overlap; identical base addresses are scanned once per iteration.
+
+```powershell
+.\build2026\Release\aoe2hd_entity_reference_discovery.exe --csv aoe2hd_entity_references.csv
+```
+
+Keep the program running while selecting *individual* villagers, military units and buildings in succession, leaving several seconds per unit, then Ctrl+C. The program starts a new group when the selected object address changes. CSV fields: `elapsed_ms,entity_id,entity_object,source,region_base,reference_address,relative_offset`. Repeated rows at the same location for different entities may indicate an updating selection field; **only multiple distinct entity references in a stable nearby container** would support a general unit list hypothesis. A selected-only field is not a player unit list. This is an experimental first reverse search, not full enumeration.
+
