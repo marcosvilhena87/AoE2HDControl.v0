@@ -1,4 +1,5 @@
 #include "PlayerUnitListDiscovery.h"
+#include "PlayerUnitEntryProbe.h"
 #include "SelectedTelemetryReader.h"
 #include "ProcessMemory.h"
 #include <chrono>
@@ -19,8 +20,11 @@ int main(int argc,char** argv){
  std::ofstream out(path,std::ios::trunc);
  if(!out){std::cerr<<"Cannot create CSV\n";return 2;}
  out<<"elapsed_ms,world,player,source,offset,stride,entries,sampled,local_matches,other_matches,unreadable,selected_matches,ids_sample\n";
+ std::ofstream detail("aoe2hd_player_unit_entry_evidence.csv",std::ios::trunc);
+ if(!detail){std::cerr<<"Cannot create entry evidence CSV\n";return 2;}
+ detail<<"elapsed_ms,source,offset,stride,index,word,value,target,entity_id,owner,kind,selected_match,local_owner\n";
  std::signal(SIGINT,onStop);
- std::cout<<"Read-only player unit list discovery; Ctrl+C to stop.\n"
+ std::cout<<"Read-only player unit list discovery v2; Ctrl+C to stop.\n"
  <<"Select a known unit occasionally to anchor candidate lists; selection is optional.\n"
  <<"Rows are hypotheses, not confirmed unit enumerations.\n";
  auto started=std::chrono::steady_clock::now();
@@ -35,6 +39,12 @@ int main(int argc,char** argv){
    auto ms=std::chrono::duration_cast<std::chrono::milliseconds>(
      std::chrono::steady_clock::now()-started).count();
    for(const auto& entry:result){
+    for(const auto& ev:aoe2hd::ProbeUnitEntryEvidence(mem,world,entry.vector,anchor)){
+     detail<<ms<<','<<entry.vector.source<<','<<entry.vector.offset<<','
+      <<entry.vector.stride<<','<<ev.index<<','<<ev.word<<','
+      <<ev.value<<','<<ev.target<<','<<ev.entityId<<','
+      <<ev.owner<<','<<ev.kind<<','<<ev.selectedMatch<<','<<ev.localOwner<<'\n';
+    }
     const auto& v=entry.vector;
     out<<ms<<','<<world.snapshot.world<<','<<local->object<<','
      <<v.source<<','<<v.offset<<','<<v.stride<<','<<v.count<<','
@@ -46,7 +56,7 @@ int main(int argc,char** argv){
     }
     out<<'\n';
    }
-   out.flush();
+   out.flush();detail.flush();
    if(!result.empty()){
     const auto& best=result.front();
     std::cout<<"["<<ms<<" ms] candidates="<<result.size()<<" best="
