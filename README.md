@@ -596,3 +596,14 @@ Windows executable \`aoe2hd_villager_task_experiment.exe\` follows the first **l
 \`\`\`
 
 Select a villager, press \`0\` in the console, order food, return to console and press \`1\`; repeat with wood (\`2\`), gold (\`3\`), stone (\`4\`) and food (\`1\`) again. Do not rely on exact timing of task changes relative to manually annotated keys. Keep the same villager selected where possible; the tool records transitions and selection status changes, and does not silently relock. Existing output at the selected path is overwritten. The candidate values are experimental.
+
+
+### Villager HUD role vs actual action experiment
+
+\`aoe2hd_villager_role_action_experiment.exe\` records **two independent manually observed labels** for the first selected local villager: \`hud_role_observed\` (0 Villager, 1 Gatherer, 2 Shepherd, 3 Hunter, 4 Fisher, 5 Gold miner, 6 Lumberjack, 7 Stone miner, 8 Farmer, 9 Builder) and \`action_observed\` (s Stopped, m Moving, g Gathering, b Building, u Attacking unit, e Attacking building, w Attacking wolf, x Other). Give labels by pressing keys in the PowerShell console **after observing the HUD/action**. For example, when the HUD continues showing Lumberjack after pressing Stop in-game, mark \`6\` for Lumberjack and \`s\` for Stopped. The labels remain independently set until explicitly changed. The tool does **not** detect the HUD text or actual action from memory.
+
+\`\`\`powershell
+.\build2026\Release\aoe2hd_villager_role_action_experiment.exe --csv aoe2hd_villager_role_action.csv
+\`\`\`
+
+Read-only sampling approximately every 250 ms logs definition-pointer and type-candidate changes, the manually observed role and action, and selection loss. Avoid switching units: first valid selected local entity ID is locked. Console annotation timestamps are approximate and are not command times. \`q\` quits. Output is overwritten at startup. This is a *labelled experiment*, not a verified \`VillagerActionReader\` — discovering authoritative action-state memory offsets remains future work.
